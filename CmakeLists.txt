@@ -1,0 +1,20 @@
+project(main)
+cmake_minimum_required(VERSION 2.8.11)
+
+set(CMAKE_VERBOSE_MAKEFILE TRUE)
+find_package(Boost REQUIRED system thread regex)
+SET(Boost_USE_STATIC_LIBS OFF)
+SET(Boost_USE_MULTITHREAD ON)
+SET(SOURCES SerialPort.h main.cpp)
+SET(HEADERS )
+
+
+if(Boost_FOUND)
+  include_directories(${Boost_INCLUDE_DIRS})
+  add_executable(main ${HEADERS} ${SOURCES})
+  target_link_libraries(main ${Boost_LIBRARIES})
+endif()
+
+if(MINGW)
+  target_link_libraries(main ws2_32)
+endif()
