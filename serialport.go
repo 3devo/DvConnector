@@ -383,7 +383,7 @@ func (p *serport) writerNoBuf() {
 var spmutex = &sync.Mutex{}
 var spIsOpening = false
 
-func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool) {
+func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool, dtrOn bool) {
 
 	log.Print("Inside spHandler")
 
@@ -409,7 +409,7 @@ func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool) 
 	}
 
 	conf := &SerialConfig{Name: portname, Baud: baud, RtsOn: true}
-	conf.DtrOn = false
+	conf.DtrOn = dtrOn
 
 	// Needed for Arduino serial library
 	mode := &serial.Mode{}
@@ -417,7 +417,7 @@ func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool) 
 	mode.DataBits = 7
 	mode.Parity = 0
 	mode.StopBits = 1
-	mode.DTROn = false
+	mode.DTROn = dtrOn
 
 	// Needed for original serial library
 	// sp, err := serial.OpenPort(conf)
