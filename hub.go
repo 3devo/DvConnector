@@ -14,7 +14,6 @@ import (
 	"encoding/json"
 	"runtime"
 	"runtime/debug"
-	"strconv"
 	"strings"
 )
 
@@ -124,21 +123,10 @@ func checkCmd(m []byte) {
 	sl := strings.ToLower(s)
 
 	if strings.HasPrefix(sl, "open") {
-
-		// check if user wants to open this port as a secondary port
-		// this doesn't mean much other than allowing the UI to show
-		// a port as primary and make other ports sort of act less important
-		isSecondary := false
-		if strings.HasPrefix(s, "open secondary") {
-			isSecondary = true
-			// swap out the word secondary
-			s = strings.Replace(s, "open secondary", "open", 1)
-		}
-
 		// remove newline
 		args := strings.Split(strings.TrimSpace(s), " ")
-		if len(args) < 3 {
-			go spErr("You did not specify a port and baud rate in your open cmd")
+		if len(args) < 2 {
+			go spErr("You did not specify a port in your open cmd")
 			return
 		}
 		if len(args[1]) < 1 {
@@ -146,21 +134,12 @@ func checkCmd(m []byte) {
 			return
 		}
 
-		baudStr := strings.Replace(args[2], "\n", "", -1)
-		baud, err := strconv.Atoi(baudStr)
-		if err != nil {
-			go spErr("Problem converting baud rate " + args[2])
-			return
+		dtrOn := false
+		if len(args) > 2 {
+			dtrOn = true
 		}
-		// pass in buffer type now as string. if user does not
-		// ask for a buffer type pass in empty string
-		bufferAlgorithm := ""
-		if len(args) > 3 {
-			// cool. we got a buffer type request
-			buftype := strings.Replace(args[3], "\n", "", -1)
-			bufferAlgorithm = buftype
-		}
-		go spHandlerOpen(args[1], baud, bufferAlgorithm, isSecondary)
+
+		go spHandlerOpen(args[1], 115200, "nodemcu", false, dtrOn)
 
 	} else if strings.HasPrefix(sl, "close") {
 
@@ -247,110 +226,6 @@ func checkCmd(m []byte) {
 		cayennSendTcp(s)
 	} else if strings.HasPrefix(sl, "usblist") {
 		SendUsbList()
-		/*
-			} else if strings.HasPrefix(sl, "gethost") {
-				hostname, err := gpio.Host()
-				if err != nil {
-					go h.sendErr(err.Error())
-				}
-				go h.sendMsg("Host", hostname)
-
-			} else if strings.HasPrefix(sl, "getpinmap") {
-				pinMap, err := gpio.PinMap()
-				if err != nil {
-					go h.sendErr(err.Error())
-				}
-				go h.sendMsg("PinMap", pinMap)
-			} else if strings.HasPrefix(sl, "getpinstates") {
-				pinStates, err := gpio.PinStates()
-				if err != nil {
-					go h.sendErr(err.Error())
-				}
-				go h.sendMsg("PinStates", pinStates)
-
-			} else if strings.HasPrefix(sl, "initpin") {
-				// format : setpin pinId dir pullup
-				args := strings.Split(s, " ")
-				if len(args) < 4 {
-					go h.sendErr("You did not specify a pin and a direction [0|1|low|high] and a name")
-					return
-				}
-				if len(args[1]) < 1 {
-					go h.sendErr("You did not specify a pin")
-					return
-				}
-				pin := args[1]
-				dirStr := args[2]
-				name := args[4]
-				dir := In
-				switch {
-				case dirStr == "1" || dirStr == "out" || dirStr == "output":
-					dir = Out
-				case dirStr == "0" || dirStr == "in" || dirStr == "input":
-					dir = In
-				case dirStr == "pwm":
-					dir = PWM
-				}
-				pullup := Pull_None
-				switch {
-				case args[3] == "1" || args[3] == "up":
-					pullup = Pull_Up
-				case args[3] == "0" || args[3] == "down":
-					pullup = Pull_Down
-				}
-				err := gpio.PinInit(pin, dir, pullup, name)
-				if err != nil {
-					go h.sendErr(err.Error())
-				}
-			} else if strings.HasPrefix(sl, "removepin") {
-				// format : removepin pinId
-				args := strings.Split(s, " ")
-				if len(args) < 2 {
-					go h.sendErr("You did not specify a pin id")
-					return
-				}
-				err := gpio.PinRemove(args[1])
-				if err != nil {
-					go h.sendErr(err.Error())
-				}
-			} else if strings.HasPrefix(sl, "setpin") {
-				// format : setpin pinId high/low/1/0
-				args := strings.Split(s, " ")
-				if len(args) < 3 {
-					go h.sendErr("You did not specify a pin and a state [0|1|low|high]")
-					return
-				}
-				if len(args[1]) < 1 {
-					go h.sendErr("You did not specify a pin")
-					return
-				}
-				pin := args[1]
-				stateStr := args[2]
-				state := 0
-				switch {
-				case stateStr == "1" || stateStr == "high":
-					state = 1
-				case stateStr == "0" || stateStr == "low":
-					state = 0
-				default:
-					// assume its a pwm value...if it converts to integer in 0-255 range
-					s, err := strconv.Atoi(stateStr)
-					if err != nil {
-						go h.sendErr("Invalid value, must be between 0 and 255 : " + stateStr)
-						return
-					}
-					if s < 0 || s > 255 {
-						go h.sendErr("Invalid value, must be between 0 and 255 : " + stateStr)
-						return
-					}
-					state = s
-				}
-
-				err := gpio.PinSet(pin, byte(state))
-				if err != nil {
-					go h.sendErr(err.Error())
-				}
-		*/
 	} else {
 		go spErr("Could not understand command.")
 	}
