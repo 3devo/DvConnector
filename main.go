@@ -19,6 +19,8 @@ import (
 	"runtime/debug"
 	"text/template"
 	"time"
+
+	"github.com/getlantern/systray"
 )
 
 var (
@@ -26,12 +28,13 @@ var (
 	versionFloat = float32(1.95)
 	addr         = flag.String("addr", ":8989", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	//	addr  = flag.String("addr", ":8980", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
-	saddr = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
-	scert = flag.String("scert", "cert.pem", "https certificate file")
-	skey  = flag.String("skey", "key.pem", "https key file")
+	saddr     = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
+	scert     = flag.String("scert", "cert.pem", "https certificate file")
+	skey      = flag.String("skey", "key.pem", "https key file")
+	hibernate = flag.Bool("hibernate", false, "start hibernated")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
-	verbose = flag.Bool("v", false, "show debug logging")
+	verbose = flag.Bool("v", true, "show debug logging")
 	//homeTempl *template.Template
 	isLaunchSelf = flag.Bool("ls", false, "Launch self 5 seconds later. This flag is used when you ask for a restart from a websocket client.")
 	isAllowExec  = flag.Bool("allowexec", false, "Allow terminal commands to be executed (default false)")
@@ -217,14 +220,13 @@ func main() {
 	go startHttps(ip)
 
 	log.Println("The Serial Port JSON Server is now running.")
-	log.Println("If you are using ChiliPeppr, you may go back to it and connect to this server.")
 
 	// turn off logging output unless user wanted verbose mode
 	// actually, this is now done after the serial port list thread completes
 	if !*verbose {
 		//		log.SetOutput(new(NullWriter)) //route all logging to nullwriter
 	}
-
+	systray.Run(onReady, onExit)
 	// wait
 	ch := make(chan bool)
 	<-ch
@@ -349,14 +351,16 @@ const homeTemplateHtml = `<!DOCTYPE html>
     if (window["WebSocket"]) {
         conn = new WebSocket("ws://{{$}}/ws");
         conn.onclose = function(evt) {
-            appendLog($("<div><b>Connection closed.</b></div>"))
+			appendLog($("<div><b>Connection closed.</b></div>"))			
         }
         conn.onmessage = function(evt) {
             appendLog($("<div/>").text(evt.data))
-        }
+		}
     } else {
         appendLog($("<div><b>Your browser does not support WebSockets.</b></div>"))
-    }
+	}
+	
+	setTimeout(() => {conn.send('open com12 reset\n')}, 500);
     });
 </script>
 <style type="text/css">
@@ -401,7 +405,7 @@ body {
 <div id="log"></div>
 <form id="form">
     <input type="submit" value="Send" />
-    <input type="text" id="msg" size="64"/>
+    <input type="text" focus="true" id="msg" size="64"/>
 </form>
 </body>
 </html>
