@@ -10,17 +10,24 @@ import (
 =======
 	"sync"
 
+<<<<<<< HEAD
 >>>>>>> 6ef2d7e... Added NodeMCU buffer
 	"github.com/johnlauer/goserial"
 	//"github.com/facchinm/go-serial"
 >>>>>>> 99258db... Back to original serial library
+=======
+>>>>>>> 9921d46... SerialPort: Added my own fork to enable dtr at open
 	"io"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 
+<<<<<<< HEAD
 	serial "github.com/facchinm/go-serial"
+=======
+	"github.com/bob-thomas/go-serial"
+>>>>>>> 9921d46... SerialPort: Added my own fork to enable dtr at open
 )
 
 type SerialConfig struct {
@@ -45,9 +52,9 @@ type serport struct {
 	// The serial port connection.
 
 	// Needed for original serial library
-	portConf *serial.Config
+	// portConf *serial.Config
 	// Needed for Arduino serial library
-	//portConf *SerialConfig
+	portConf *SerialConfig
 
 	portIo io.ReadWriteCloser
 
@@ -121,7 +128,6 @@ type SpPortMessage struct {
 }
 
 func (p *serport) reader() {
-
 	//var buf bytes.Buffer
 	ch := make([]byte, 1024)
 	timeCheckOpen := time.Now()
@@ -397,49 +403,26 @@ func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool) 
 	out.WriteString(" baud")
 	log.Print(out.String())
 
-	//h.broadcast <- []byte("Opened a serial port ")
-	//h.broadcastSys <- out.Bytes()
-
 	isPrimary := true
 	if isSecondary {
 		isPrimary = false
 	}
 
-	//options := serial.RawOptions
-	//options.BitRate = 1200
-	//options.FlowControl = serial.FLOWCONTROL_RTSCTS
-	//p, err := options.Open(portname)
-
-	// Needed for original serial library
-	conf := &serial.Config{}
-	conf.Baud = baud
-	conf.Name = portname
-	conf.RtsOn = true
+	conf := &SerialConfig{Name: portname, Baud: baud, RtsOn: true}
 	conf.DtrOn = false
 
 	// Needed for Arduino serial library
-	/*
-		conf := &SerialConfig{Name: portname, Baud: baud, RtsOn: true}
-		conf.DtrOn = false
-	*/
-
-	/*
-		// Needed for Arduino serial library
-		mode := &serial.Mode{
-			BaudRate: baud,
-			Vmin:     0,
-			Vtimeout: 10,
-		}
-	*/
-	//mode.DataBits = 7
-	//mode.Parity = 0
-	//mode.StopBits = 1
+	mode := &serial.Mode{}
+	mode.BaudRate = baud
+	mode.DataBits = 7
+	mode.Parity = 0
+	mode.StopBits = 1
+	mode.DTROn = false
 
 	// Needed for original serial library
-	sp, err := serial.OpenPort(conf)
+	// sp, err := serial.OpenPort(conf)
 	// Needed for Arduino serial library
-	//sp, err := serial.OpenPort(portname, mode)
-
+	sp, err := serial.Open(portname, mode)
 	log.Print("Just tried to open port")
 	if err != nil {
 		//log.Fatal(err)
@@ -450,10 +433,10 @@ func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool) 
 		return
 	}
 	log.Print("Opened port successfully")
+
 	//p := &serport{send: make(chan []byte, 256), portConf: conf, portIo: sp}
 	// we can go up to 500,000 lines of gcode in the buffer
 	p := &serport{sendBuffered: make(chan Cmd, 500000), sendNoBuf: make(chan Cmd), portConf: conf, portIo: sp, BufferType: buftype, IsPrimary: isPrimary, IsSecondary: isSecondary, isFeedRateOverrideOn: false}
-
 	// if user asked for a buffer watcher, i.e. tinyg/grbl then attach here
 	if buftype == "tinyg_old" {
 
