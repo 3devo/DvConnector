@@ -26,6 +26,12 @@ func onReady() {
 		<-mAbout.ClickedCh
 		open.Run("https://3devo.com/support/")
 	}()
+
+	mOpen := systray.AddMenuItem("Open Monitor", "Opens the serial monitor")
+	go func() {
+		<-mOpen.ClickedCh
+		open.Run("http://localhost:8989")
+	}()
 }
 
 func onExit() {
