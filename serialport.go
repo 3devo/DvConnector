@@ -3,31 +3,17 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-<<<<<<< HEAD
-<<<<<<< HEAD
 	//"github.com/johnlauer/goserial"
-=======
-=======
 	"sync"
 
-<<<<<<< HEAD
->>>>>>> 6ef2d7e... Added NodeMCU buffer
-	"github.com/johnlauer/goserial"
 	//"github.com/facchinm/go-serial"
->>>>>>> 99258db... Back to original serial library
-=======
->>>>>>> 9921d46... SerialPort: Added my own fork to enable dtr at open
 	"io"
 	"log"
 	"strconv"
 	"strings"
 	"time"
 
-<<<<<<< HEAD
-	serial "github.com/facchinm/go-serial"
-=======
-	"github.com/bob-thomas/go-serial"
->>>>>>> 9921d46... SerialPort: Added my own fork to enable dtr at open
+	serial "github.com/bob-thomas/go-serial"
 )
 
 type SerialConfig struct {
@@ -57,6 +43,8 @@ type serport struct {
 	portConf *SerialConfig
 
 	portIo io.ReadWriteCloser
+
+	serialPort serial.Port
 
 	done chan bool // signals the end of this request
 
@@ -433,10 +421,11 @@ func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool, 
 		return
 	}
 	log.Print("Opened port successfully")
-
+	sp.ResetInputBuffer()
+	sp.ResetOutputBuffer()
 	//p := &serport{send: make(chan []byte, 256), portConf: conf, portIo: sp}
 	// we can go up to 500,000 lines of gcode in the buffer
-	p := &serport{sendBuffered: make(chan Cmd, 500000), sendNoBuf: make(chan Cmd), portConf: conf, portIo: sp, BufferType: buftype, IsPrimary: isPrimary, IsSecondary: isSecondary, isFeedRateOverrideOn: false}
+	p := &serport{sendBuffered: make(chan Cmd, 500000), sendNoBuf: make(chan Cmd), portConf: conf, portIo: sp, serialPort: sp, BufferType: buftype, IsPrimary: isPrimary, IsSecondary: isSecondary, isFeedRateOverrideOn: false}
 	// if user asked for a buffer watcher, i.e. tinyg/grbl then attach here
 	if buftype == "tinyg_old" {
 
@@ -573,6 +562,7 @@ func spHandlerClose(p *serport) {
 	_, _ = p.portIo.Write([]byte("?"))
 
 	p.bufferwatcher.Close()
+	p.serialPort.SetDTR(false)
 	p.portIo.Close()
 	// unregister myself
 	// we already have a deferred unregister in place from when
