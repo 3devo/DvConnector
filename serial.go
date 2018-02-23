@@ -473,7 +473,10 @@ func spList() {
 			var ossp OsSerialPort
 			ossp.Name = port.portConf.Name
 			ossp.FriendlyName = port.portConf.Name
-			list = append([]OsSerialPort{ossp}, list...)
+			matched, err := regexp.MatchString(".*3devo.*", ossp.FriendlyName)
+			if matched && err == nil {
+				list = append([]OsSerialPort{ossp}, list...)
+			}
 		}
 	}
 

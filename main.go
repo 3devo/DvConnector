@@ -34,7 +34,7 @@ var (
 	directory = flag.String("d", "./fefrontend/", "the directory of static file to host")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
-	verbose = flag.Bool("v", true, "show debug logging")
+	verbose = flag.Bool("v", false, "show debug logging")
 	//homeTempl *template.Template
 	isLaunchSelf = flag.Bool("ls", false, "Launch self 5 seconds later. This flag is used when you ask for a restart from a websocket client.")
 	isAllowExec  = flag.Bool("allowexec", false, "Allow terminal commands to be executed (default false)")

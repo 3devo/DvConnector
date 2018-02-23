@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"log"
+	"os"
 	"regexp"
 	"strings"
 	"sync"
@@ -47,8 +48,13 @@ func (b *BufferflowNodeMcu) Init() {
 	b.manualLock = &sync.Mutex{}
 	b.Input = make(chan string)
 	b.BufferMax = 2
-
+	t := time.Now()
+	logPath := "./logs"
+	os.MkdirAll(logPath, os.ModePerm)
+	f, err := os.Create(logPath + "/LOG-" + t.Format("2006-01-02-15-04-05") + ".txt")
+	check(err)
 	go func() {
+		defer f.Close()
 		for data := range b.Input {
 
 			//log.Printf("Got to b.Input chan loop. data:%v\n", data)
@@ -131,6 +137,7 @@ func (b *BufferflowNodeMcu) Init() {
 						m := DataCmdComplete{"Complete", id, b.Port, b.q.Len(), doneCmd}
 						bm, err := json.Marshal(m)
 						if err == nil {
+
 							h.broadcastSys <- bm
 						}
 
@@ -165,6 +172,8 @@ func (b *BufferflowNodeMcu) Init() {
 				m := DataPerLine{b.Port, element + "\n"}
 				bm, err := json.Marshal(m)
 				if err == nil {
+					f.WriteString(m.D)
+					f.Sync()
 					h.broadcastSys <- bm
 				}
 
