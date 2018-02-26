@@ -9,6 +9,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/websocket"
+	"github.com/julienschmidt/httprouter"
 )
 
 type connection struct {
@@ -41,7 +42,7 @@ func (c *connection) writer() {
 	c.ws.Close()
 }
 
-func wsHandler(w http.ResponseWriter, r *http.Request) {
+func wsHandler(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 	log.Print("Started a new websocket handler")
 	ws, err := websocket.Upgrade(w, r, nil, 1024, 1024)
 	if _, ok := err.(websocket.HandshakeError); ok {

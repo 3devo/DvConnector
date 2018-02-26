@@ -4,8 +4,10 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"go/build"
+	"io/ioutil"
 	"log"
 	"net/http"
 	//"path/filepath"
@@ -20,6 +22,7 @@ import (
 	"time"
 
 	"github.com/getlantern/systray"
+	"github.com/julienschmidt/httprouter"
 )
 
 var (
@@ -208,12 +211,23 @@ func main() {
 	//gpio.PreInit()
 	// when the app exits, clean up our gpio ports
 	//defer gpio.CleanupGpio()
+	router := httprouter.New()
 
 	http.Handle("/", http.FileServer(http.Dir(*directory)))
-	http.HandleFunc("/ws", wsHandler)
+	router.GET("/ws", wsHandler)
+	router.GET("/rest/logs/", listLogsHandler)
+	router.GET("/rest/logs/:logfile", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		http.ServeFile(w, r, "./logs/"+ps.ByName("logfile"))
+	})
 
-	go startHttp(ip)
-	go startHttps(ip)
+	f := flag.Lookup("addr")
+	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
+	if err := http.ListenAndServe(*addr, router); err != nil {
+		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
+		fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
+		log.Fatal("Error ListenAndServe:", err)
+	}
 
 	log.Println("The Serial Port JSON Server is now running.")
 
@@ -226,6 +240,26 @@ func main() {
 	// wait
 	ch := make(chan bool)
 	<-ch
+}
+
+type LogFile struct {
+	Name    string
+	ModDate string
+	Size    int64
+}
+
+func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	files, err := ioutil.ReadDir("./logs/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	logfiles := make([]LogFile, 0, len(files))
+	for _, f := range files {
+		logfiles = append(logfiles, LogFile{Name: f.Name(), ModDate: f.ModTime().Format("2006-01-02 15:04:05"), Size: f.Size()})
+	}
+	data, err := json.Marshal(logfiles)
+	fmt.Fprint(w, string(data))
 }
 
 func startHttp(ip string) {
