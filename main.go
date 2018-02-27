@@ -23,6 +23,8 @@ import (
 
 	"github.com/getlantern/systray"
 	"github.com/julienschmidt/httprouter"
+	"github.com/rs/cors"
+	"github.com/skratchdot/open-golang/open"
 )
 
 var (
@@ -34,7 +36,7 @@ var (
 	scert     = flag.String("scert", "cert.pem", "https certificate file")
 	skey      = flag.String("skey", "key.pem", "https key file")
 	hibernate = flag.Bool("hibernate", false, "start hibernated")
-	directory = flag.String("d", "./fefrontend/", "the directory of static file to host")
+	directory = flag.String("d", "./dist", "the directory of static file to host")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
 	verbose = flag.Bool("v", false, "show debug logging")
@@ -89,7 +91,7 @@ func launchSelfLater() {
 }
 
 func main() {
-	// open.Run("http://localhost:8989")
+	open.Run("http://localhost:8989")
 	// Test USB list
 	//	GetUsbList()
 
@@ -212,18 +214,28 @@ func main() {
 	// when the app exits, clean up our gpio ports
 	//defer gpio.CleanupGpio()
 	router := httprouter.New()
-
-	http.Handle("/", http.FileServer(http.Dir(*directory)))
 	router.GET("/ws", wsHandler)
 	router.GET("/rest/logs/", listLogsHandler)
 	router.GET("/rest/logs/:logfile", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.ServeFile(w, r, "./logs/"+ps.ByName("logfile"))
 	})
+	router.DELETE("/rest/logs/:logfile", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		w.Header().Set("Access-Control-Allow-Origin", "*")
+		// delete file
+		var err = os.Remove("./logs/" + ps.ByName("logfile"))
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "%s deleted without error", ps.ByName("logfile"))
+	})
 
+	router.NotFound = http.FileServer(http.Dir("./dist"))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
-	if err := http.ListenAndServe(*addr, router); err != nil {
+	handler := cors.AllowAll().Handler(router)
+	if err := http.ListenAndServe(*addr, handler); err != nil {
 		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
 		fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
 		log.Fatal("Error ListenAndServe:", err)
@@ -252,7 +264,7 @@ func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	w.Header().Set("Access-Control-Allow-Origin", "*")
 	files, err := ioutil.ReadDir("./logs/")
 	if err != nil {
-		log.Fatal(err)
+		fmt.Fprint(w, "[]")
 	}
 	logfiles := make([]LogFile, 0, len(files))
 	for _, f := range files {
