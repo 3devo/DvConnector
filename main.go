@@ -235,13 +235,14 @@ func main() {
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
 	handler := cors.AllowAll().Handler(router)
-	if err := http.ListenAndServe(*addr, handler); err != nil {
-		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
-		fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
-		log.Fatal("Error ListenAndServe:", err)
-	}
+	go startHttp(ip, handler)
+	// if err := http.ListenAndServe(*addr, handler); err != nil {
+	// 	fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
+	// 	fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
+	// 	log.Fatal("Error ListenAndServe:", err)
+	// }
 
-	log.Println("The Serial Port JSON Server is now running.")
+	// log.Println("The Serial Port JSON Server is now running.")
 
 	// turn off logging output unless user wanted verbose mode
 	// actually, this is now done after the serial port list thread completes
@@ -274,10 +275,10 @@ func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	fmt.Fprint(w, string(data))
 }
 
-func startHttp(ip string) {
+func startHttp(ip string, h http.Handler) {
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
-	if err := http.ListenAndServe(*addr, nil); err != nil {
+	if err := http.ListenAndServe(*addr, h); err != nil {
 		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
 		fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
 		log.Fatal("Error ListenAndServe:", err)
