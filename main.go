@@ -217,11 +217,9 @@ func main() {
 	router.GET("/ws", wsHandler)
 	router.GET("/rest/logs/", listLogsHandler)
 	router.GET("/rest/logs/:logfile", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
 		http.ServeFile(w, r, "./logs/"+ps.ByName("logfile"))
 	})
 	router.DELETE("/rest/logs/:logfile", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
 		// delete file
 		var err = os.Remove("./logs/" + ps.ByName("logfile"))
 		if err != nil {
@@ -230,6 +228,8 @@ func main() {
 		w.WriteHeader(http.StatusOK)
 		fmt.Fprintf(w, "%s deleted without error", ps.ByName("logfile"))
 	})
+
+	router.GET("/rest/workspaces/", listWorkspaces)
 
 	router.NotFound = http.FileServer(http.Dir("./dist"))
 	f := flag.Lookup("addr")
@@ -262,7 +262,6 @@ type LogFile struct {
 }
 
 func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	w.Header().Set("Access-Control-Allow-Origin", "*")
 	files, err := ioutil.ReadDir("./logs/")
 	if err != nil {
 		fmt.Fprint(w, "[]")
@@ -272,6 +271,23 @@ func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 		logfiles = append(logfiles, LogFile{Name: f.Name(), ModDate: f.ModTime().Format("2006-01-02 15:04:05"), Size: f.Size()})
 	}
 	data, err := json.Marshal(logfiles)
+	fmt.Fprint(w, string(data))
+}
+
+func listWorkspaces(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
+	files, err := ioutil.ReadDir("./workspaces/")
+	if err != nil {
+		fmt.Fprint(w, "[]")
+	}
+	workspaces := make([]string, 0, len(files))
+	for _, f := range files {
+		b, err := ioutil.ReadFile("./workspaces/" + f.Name()) // just pass the file name
+		if err != nil {
+			fmt.Print(err)
+		}
+		workspaces = append(workspaces, string(b))
+	}
+	data, err := json.Marshal(workspaces)
 	fmt.Fprint(w, string(data))
 }
 
