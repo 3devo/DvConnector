@@ -256,9 +256,9 @@ func main() {
 }
 
 type LogFile struct {
-	Name    string
-	ModDate string
-	Size    int64
+	Name    string `json:"name"`
+	ModDate string `json:"modDate"`
+	Size    int64  `json:"size"`
 }
 
 func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -279,13 +279,16 @@ func listWorkspaces(w http.ResponseWriter, r *http.Request, _ httprouter.Params)
 	if err != nil {
 		fmt.Fprint(w, "[]")
 	}
-	workspaces := make([]string, 0, len(files))
+	type buffer map[string]interface{}
+	workspaces := make([]buffer, 0, len(files))
 	for _, f := range files {
 		b, err := ioutil.ReadFile("./workspaces/" + f.Name()) // just pass the file name
+		var dummy map[string]interface{}
+		json.Unmarshal(b, &dummy)
 		if err != nil {
 			fmt.Print(err)
 		}
-		workspaces = append(workspaces, string(b))
+		workspaces = append(workspaces, raw)
 	}
 	data, err := json.Marshal(workspaces)
 	fmt.Fprint(w, string(data))
