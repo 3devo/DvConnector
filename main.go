@@ -215,21 +215,20 @@ func main() {
 	//defer gpio.CleanupGpio()
 	router := httprouter.New()
 	router.GET("/ws", wsHandler)
-	router.GET("/rest/logs/", listLogsHandler)
-	router.GET("/rest/logs/:logfile", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		http.ServeFile(w, r, "./logs/"+ps.ByName("logfile"))
+	router.GET("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		http.ServeFile(w, r, "./"+ps.ByName("type")+"/"+ps.ByName("id")+map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
 	})
-	router.DELETE("/rest/logs/:logfile", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	router.DELETE("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// delete file
-		var err = os.Remove("./logs/" + ps.ByName("logfile"))
+		var err = os.Remove("./" + ps.ByName("type") + "/" + ps.ByName("id"))
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "%s deleted without error", ps.ByName("logfile"))
+		fmt.Fprintf(w, "%s deleted without error", ps.ByName("id"))
 	})
 
-	router.GET("/rest/workspaces/", listWorkspaces)
+	router.GET("/rest/:type/", listResource)
 
 	router.NotFound = http.FileServer(http.Dir("./dist"))
 	f := flag.Lookup("addr")
@@ -274,24 +273,28 @@ func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params
 	fmt.Fprint(w, string(data))
 }
 
-func listWorkspaces(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	files, err := ioutil.ReadDir("./workspaces/")
-	if err != nil {
-		fmt.Fprint(w, "[]")
-	}
-	type buffer map[string]interface{}
-	workspaces := make([]buffer, 0, len(files))
-	for _, f := range files {
-		b, err := ioutil.ReadFile("./workspaces/" + f.Name()) // just pass the file name
-		var dummy map[string]interface{}
-		json.Unmarshal(b, &dummy)
+func listResource(w http.ResponseWriter, r *http.Request, param httprouter.Params) {
+	if param.ByName("type") == "logs" {
+		listLogsHandler(w, r, param)
+	} else {
+		files, err := ioutil.ReadDir("./" + param.ByName("type") + "/")
 		if err != nil {
-			fmt.Print(err)
+			fmt.Fprint(w, "[]")
 		}
-		workspaces = append(workspaces, raw)
+		type buffer map[string]interface{}
+		resource := make([]buffer, 0, len(files))
+		for _, f := range files {
+			b, err := ioutil.ReadFile("./" + param.ByName("type") + "/" + f.Name()) // just pass the file name
+			var dummy map[string]interface{}
+			json.Unmarshal(b, &dummy)
+			if err != nil {
+				fmt.Print(err)
+			}
+			resource = append(resource, dummy)
+		}
+		data, err := json.Marshal(resource)
+		fmt.Fprint(w, string(data))
 	}
-	data, err := json.Marshal(workspaces)
-	fmt.Fprint(w, string(data))
 }
 
 func startHttp(ip string, h http.Handler) {
