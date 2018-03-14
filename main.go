@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	//"path/filepath"
 	"errors"
 	"fmt"
@@ -25,6 +26,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"github.com/skratchdot/open-golang/open"
+	"github.com/tidwall/gjson"
 )
 
 var (
@@ -68,7 +70,11 @@ var (
 
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
-//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
+	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
+
+	ErrFileConflict = errors.New("File already exists")
+	ErrFileInternal = errors.New("Internal")
+	ErrFileNotFound = errors.New("File not found")
 )
 
 type NullWriter int
@@ -92,6 +98,10 @@ func launchSelfLater() {
 
 func main() {
 	open.Run("http://localhost:8989")
+	os.MkdirAll("./workspaces", os.ModePerm)
+	os.MkdirAll("./charts", os.ModePerm)
+	os.MkdirAll("./logs", os.ModePerm)
+	os.MkdirAll("./sheets", os.ModePerm)
 	// Test USB list
 	//	GetUsbList()
 
@@ -220,15 +230,90 @@ func main() {
 	})
 	router.DELETE("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		// delete file
-		var err = os.Remove("./" + ps.ByName("type") + "/" + ps.ByName("id"))
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+		if ps.ByName("id") == "bulk" {
+			bulkDelete(w, r, ps)
+		} else {
+			err := os.Remove("./" + ps.ByName("type") + "/" + ps.ByName("id") + map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintf(w, "%s deleted without error", ps.ByName("id"))
+			}
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "%s deleted without error", ps.ByName("id"))
 	})
 
-	router.GET("/rest/:type/", listResource)
+	router.POST("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		items := gjson.Get(string(body), "items")
+		// Bulk add
+		if items.Exists() {
+			items.ForEach(func(key, value gjson.Result) bool {
+				err := saveResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
+				if err == ErrFileInternal {
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return false
+				} else if err == ErrFileConflict {
+					http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+					return false
+				}
+				return true
+			})
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "Added bulk %s without error", ps.ByName("type"))
+		} else {
+			// Single add
+			err := saveResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
+			if err == ErrFileInternal {
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			} else if err == ErrFileConflict {
+				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+			}
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "%s Added without error", gjson.Get(string(body), "id").String())
+		}
+
+	})
+
+	router.PUT("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		body, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		}
+		items := gjson.Get(string(body), "items")
+		// Bulk add
+		if items.Exists() {
+			items.ForEach(func(key, value gjson.Result) bool {
+				err := updateResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
+				if err == ErrFileInternal {
+					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+					return false
+				} else if err == ErrFileNotFound {
+					http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+					return false
+				}
+				return true
+			})
+			w.WriteHeader(http.StatusOK)
+			fmt.Fprintf(w, "Updated bulk %s without error", ps.ByName("type"))
+		} else {
+			// Single add
+			err := updateResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
+			if err == ErrFileInternal {
+				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			} else if err == ErrFileNotFound {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			} else {
+				w.WriteHeader(http.StatusOK)
+				fmt.Fprintf(w, "%s Updated without error", gjson.Get(string(body), "id").String())
+			}
+		}
+	})
+
+	router.GET("/rest/:type", listResource)
 
 	router.NotFound = http.FileServer(http.Dir("./dist"))
 	f := flag.Lookup("addr")
@@ -294,6 +379,53 @@ func listResource(w http.ResponseWriter, r *http.Request, param httprouter.Param
 		}
 		data, err := json.Marshal(resource)
 		fmt.Fprint(w, string(data))
+	}
+
+}
+
+func updateResource(folder string, name string, data string) error {
+	if _, err := os.Stat("./" + folder + "/" + name + map[bool]string{true: ".json", false: ""}[folder != "logs"]); os.IsNotExist(err) {
+		return ErrFileNotFound
+	} else {
+		err := ioutil.WriteFile("./"+folder+"/"+name+map[bool]string{true: ".json", false: ""}[folder != "logs"], []byte(data), 0777)
+		if err != nil {
+			return ErrFileInternal
+		}
+	}
+	return nil
+}
+
+func saveResource(folder string, name string, data string) error {
+	if _, err := os.Stat("./" + folder + "/" + name + map[bool]string{true: ".json", false: ""}[folder != "logs"]); err == nil {
+		return ErrFileNotFound
+	} else {
+		f, err := os.Create("./" + folder + "/" + name + map[bool]string{true: ".json", false: ""}[folder != "logs"])
+		if err != nil {
+			return ErrFileInternal
+		}
+		f.WriteString(string(data))
+		f.Close()
+	}
+	return nil
+}
+
+func bulkDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// delete file
+	q := r.URL.Query()
+	items := strings.Split(q.Get("items"), ",")
+	// Bulk add
+	if len(items) > 0 {
+		for _, id := range items {
+			log.Println(id)
+			err := os.Remove("./" + ps.ByName("type") + "/" + id + map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
+			if err != nil {
+				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			}
+		}
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Added bulk %s without error", ps.ByName("type"))
+	} else {
+		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
 	}
 }
 
