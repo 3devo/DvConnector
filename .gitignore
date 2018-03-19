@@ -6,3 +6,5 @@ serial-port-json-server
 snapshot/*
 
 *.exe
+
+release/*
