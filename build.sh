@@ -95,7 +95,7 @@ function release()
     rm -rf release && mkdir -p release
     echo -e "\e[32mBUILDING RELEASE - \e[33m$*"
     echo -e "\e[33m-------------------------\e[32m"
-    # build_frontend
+    build_frontend
 
     echo "Building Linux amd64"
     cd $startDir

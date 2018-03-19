@@ -4,4 +4,4 @@
 [submodule "fefrontend"]
 	path = fefrontend
 	url = git@github.com:3devo/fefrontend
-	branch = dev
+	branch = dashboard-impl
