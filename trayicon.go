@@ -1,13 +1,19 @@
+// +build !cli
+
 package main
 
 import (
 	"fmt"
 	"os"
 
-	"./icon"
+	"github.com/3devo/feconnector/icon"
 	"github.com/getlantern/systray"
 	"github.com/skratchdot/open-golang/open"
 )
+
+func setupSysTray() {
+	systray.Run(onReady, onExit)
+}
 
 func onReady() {
 	systray.SetIcon(icon.Data)

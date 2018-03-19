@@ -22,7 +22,6 @@ import (
 	"runtime/debug"
 	"time"
 
-	"github.com/getlantern/systray"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"github.com/skratchdot/open-golang/open"
@@ -97,7 +96,6 @@ func launchSelfLater() {
 }
 
 func main() {
-	open.Run("http://localhost:8989")
 	os.MkdirAll("./workspaces", os.ModePerm)
 	os.MkdirAll("./charts", os.ModePerm)
 	os.MkdirAll("./logs", os.ModePerm)
@@ -114,6 +112,8 @@ func main() {
 	// see if we are supposed to wait 5 seconds
 	if *isLaunchSelf {
 		launchSelfLater()
+	} else {
+		open.Run("http://localhost:8989")
 	}
 
 	// see if they want to just create startup script
@@ -315,11 +315,10 @@ func main() {
 
 	router.GET("/rest/:type", listResource)
 
-	router.NotFound = http.FileServer(http.Dir("./dist"))
+	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
 	handler := cors.AllowAll().Handler(router)
-	go startHttp(ip, handler)
 	// if err := http.ListenAndServe(*addr, handler); err != nil {
 	// 	fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
 	// 	fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
@@ -333,8 +332,9 @@ func main() {
 	if !*verbose {
 		//		log.SetOutput(new(NullWriter)) //route all logging to nullwriter
 	}
-	systray.Run(onReady, onExit)
 	// wait
+	go startHttp(ip, handler)
+	setupSysTray()
 	ch := make(chan bool)
 	<-ch
 }
