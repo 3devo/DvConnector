@@ -402,7 +402,7 @@ func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool, 
 	// Needed for Arduino serial library
 	mode := &serial.Mode{}
 	mode.BaudRate = baud
-	mode.DataBits = 7
+	mode.DataBits = 8
 	mode.Parity = 0
 	mode.StopBits = 1
 	mode.DTROn = dtrOn
