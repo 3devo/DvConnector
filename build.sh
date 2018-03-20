@@ -83,7 +83,7 @@ function build_connector
         echo -e "\e[31mgo not found" >&2
         exit
     fi
-    if go build -o feconnector 1>/dev/null 2>> $startDir/error.log; then
+    if go build -o feconnector.exe 1>/dev/null 2>> $startDir/error.log; then
         echo "  - Done building connector"
     else
         echo -e "\e[31m - Failed building connector"  >&2
@@ -193,7 +193,7 @@ function build_windows()
     echo -e "\e[32mBuilding Windows $2"
     mkdir release/feconnector-$1_windows_$2
     cp -r fefrontend/dist ./release/feconnector-$1_windows_$2 1>/dev/null 2>> $startDir/error.log  && cp -r default-files/* ./release/feconnector-$1_windows_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    env GOOS=windows GOARCH=$2 go build -v -o release/feconnector-$1_windows_$2/feconnector.exe1>/dev/null 2>> $startDir/error.log || error $LINENO
+    env GOOS=windows GOARCH=$2 go build -v -o release/feconnector-$1_windows_$2/feconnector.exe 1>/dev/null 2>> $startDir/error.log || error $LINENO
     cd release/feconnector-$1_windows_$2
     zip -r ../feconnector-$1_windows_$2.zip * 1>/dev/null 2>> $startDir/error.log || error $LINENO
     cd ../..
