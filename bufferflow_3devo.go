@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-type BufferflowNodeMcu struct {
+type Bufferflow3Devo struct {
 	Name string
 	Port string
 	//Output         chan []byte
@@ -31,7 +31,7 @@ type BufferflowNodeMcu struct {
 	BufferMax    int
 }
 
-func (b *BufferflowNodeMcu) Init() {
+func (b *Bufferflow3Devo) Init() {
 	log.Println("Initting timed buffer flow (output once every 16ms)")
 	b.bufferedOutput = ""
 	b.IsOpen = true
@@ -87,30 +87,6 @@ func (b *BufferflowNodeMcu) Init() {
 				//log.Printf("Working on element:%v, index:%v", element, index)
 				//log.Printf("Working on element:%v, index:%v", element)
 				log.Printf("\t\tData:%v", element)
-
-				// check if there was a reset cuz we need to wipe our buffer if there was
-				if len(element) > 4 {
-					bTxt := []byte(element)[len(element)-4:]
-					bTest := []byte{14, 219, 200, 244}
-					//log.Printf("\t\ttesting two arrays\n\tbTxt :%v\n\tbTest:%v\n", bTxt, bTest)
-					//reWasItReset := regexp.MustCompile("fffd")
-					//if reWasItReset.MatchString(element) {
-					if ByteArrayEquals(bTxt, bTest) {
-						// it was reset, wipe buffer
-						b.q.Delete()
-						log.Printf("\t\tLooks like it was reset based on 1st 4 bytes. We should wipe buffer.")
-						b.SetPaused(false, 2)
-					}
-				}
-
-				// see if it just got restarted
-				reIsRestart := regexp.MustCompile("(NodeMCU custom build by frightanic.com|NodeMCU .+ build .+ powered by Lua)")
-				if reIsRestart.MatchString(element) {
-					// it was reset, wipe buffer
-					b.q.Delete()
-					log.Printf("\t\tLooks like it was reset based on NodeMCU build line. We should wipe buffer.")
-					b.SetPaused(false, 2)
-				}
 
 				// Peek to see if the message back matches the command we just sent in
 				lastCmd, _ := b.q.Peek()
@@ -204,18 +180,6 @@ func (b *BufferflowNodeMcu) Init() {
 
 }
 
-func IntArrayEquals(a []int, b []int) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-	return true
-}
-
 func ByteArrayEquals(a []byte, b []byte) bool {
 	if len(a) != len(b) {
 		return false
@@ -228,7 +192,7 @@ func ByteArrayEquals(a []byte, b []byte) bool {
 	return true
 }
 
-func (b *BufferflowNodeMcu) BlockUntilReady(cmd string, id string) (bool, bool, string) {
+func (b *Bufferflow3Devo) BlockUntilReady(cmd string, id string) (bool, bool, string) {
 
 	// Lock for this ENTIRE method
 	b.inOutLock.Lock()
@@ -289,12 +253,12 @@ func (b *BufferflowNodeMcu) BlockUntilReady(cmd string, id string) (bool, bool, 
 	return true, true, ""
 }
 
-func (b *BufferflowNodeMcu) OnIncomingData(data string) {
+func (b *Bufferflow3Devo) OnIncomingData(data string) {
 	b.Input <- data
 }
 
 // Clean out b.sem so it can truly block
-func (b *BufferflowNodeMcu) ClearOutSemaphore() {
+func (b *Bufferflow3Devo) ClearOutSemaphore() {
 	keepLooping := true
 	for keepLooping {
 		select {
@@ -311,47 +275,35 @@ func (b *BufferflowNodeMcu) ClearOutSemaphore() {
 	}
 }
 
-func (b *BufferflowNodeMcu) BreakApartCommands(cmd string) []string {
+func (b *Bufferflow3Devo) BreakApartCommands(cmd string) []string {
 	return []string{cmd}
 }
 
-func (b *BufferflowNodeMcu) Pause() {
+func (b *Bufferflow3Devo) Pause() {
 	return
 }
 
-func (b *BufferflowNodeMcu) Unpause() {
+func (b *Bufferflow3Devo) Unpause() {
 	return
 }
 
-func (b *BufferflowNodeMcu) SeeIfSpecificCommandsShouldSkipBuffer(cmd string) bool {
-	reRestart := regexp.MustCompile("node.restart\\(\\)")
-	if reRestart.MatchString(cmd) {
-		return true
-	} else {
-		return false
-	}
-}
-
-func (b *BufferflowNodeMcu) SeeIfSpecificCommandsShouldPauseBuffer(cmd string) bool {
+func (b *Bufferflow3Devo) SeeIfSpecificCommandsShouldSkipBuffer(cmd string) bool {
 	return false
 }
 
-func (b *BufferflowNodeMcu) SeeIfSpecificCommandsShouldUnpauseBuffer(cmd string) bool {
+func (b *Bufferflow3Devo) SeeIfSpecificCommandsShouldPauseBuffer(cmd string) bool {
 	return false
 }
 
-func (b *BufferflowNodeMcu) SeeIfSpecificCommandsShouldWipeBuffer(cmd string) bool {
-	reRestart := regexp.MustCompile("^\\s*node.restart\\(\\)")
-	if reRestart.MatchString(cmd) {
-		log.Printf("\t\tWe found a node.restart() and thus we will wipe buffer")
-		b.ReleaseLock()
-		return true
-	} else {
-		return false
-	}
+func (b *Bufferflow3Devo) SeeIfSpecificCommandsShouldUnpauseBuffer(cmd string) bool {
+	return false
 }
 
-func (b *BufferflowNodeMcu) SeeIfSpecificCommandsReturnNoResponse(cmd string) bool {
+func (b *Bufferflow3Devo) SeeIfSpecificCommandsShouldWipeBuffer(cmd string) bool {
+	return false
+}
+
+func (b *Bufferflow3Devo) SeeIfSpecificCommandsReturnNoResponse(cmd string) bool {
 
 	reWhiteSpace := regexp.MustCompile("^\\s*$")
 	if reWhiteSpace.MatchString(cmd) {
@@ -364,18 +316,18 @@ func (b *BufferflowNodeMcu) SeeIfSpecificCommandsReturnNoResponse(cmd string) bo
 	//return false
 }
 
-func (b *BufferflowNodeMcu) ReleaseLock() {
+func (b *Bufferflow3Devo) ReleaseLock() {
 	log.Println("Wiping NodeMCU buffer")
 
 	b.q.Delete()
 	b.SetPaused(false, 2)
 }
 
-func (b *BufferflowNodeMcu) IsBufferGloballySendingBackIncomingData() bool {
+func (b *Bufferflow3Devo) IsBufferGloballySendingBackIncomingData() bool {
 	return true
 }
 
-func (b *BufferflowNodeMcu) Close() {
+func (b *Bufferflow3Devo) Close() {
 	if b.IsOpen == false {
 		// we are being asked a 2nd time to close when we already have
 		// that will cause a panic
@@ -388,13 +340,13 @@ func (b *BufferflowNodeMcu) Close() {
 	close(b.Input)
 }
 
-func (b *BufferflowNodeMcu) RewriteSerialData(cmd string, id string) string {
+func (b *Bufferflow3Devo) RewriteSerialData(cmd string, id string) string {
 	return ""
 }
 
 //	Gets the paused state of this buffer
 //	go-routine safe.
-func (b *BufferflowNodeMcu) GetPaused() bool {
+func (b *Bufferflow3Devo) GetPaused() bool {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	return b.Paused
@@ -402,7 +354,7 @@ func (b *BufferflowNodeMcu) GetPaused() bool {
 
 //	Sets the paused state of this buffer
 //	go-routine safe.
-func (b *BufferflowNodeMcu) SetPaused(isPaused bool, semRelease int) {
+func (b *Bufferflow3Devo) SetPaused(isPaused bool, semRelease int) {
 	b.lock.Lock()
 	defer b.lock.Unlock()
 	b.Paused = isPaused
@@ -417,13 +369,13 @@ func (b *BufferflowNodeMcu) SetPaused(isPaused bool, semRelease int) {
 	}
 }
 
-func (b *BufferflowNodeMcu) GetManualPaused() bool {
+func (b *Bufferflow3Devo) GetManualPaused() bool {
 	b.manualLock.Lock()
 	defer b.manualLock.Unlock()
 	return b.ManualPaused
 }
 
-func (b *BufferflowNodeMcu) SetManualPaused(isPaused bool) {
+func (b *Bufferflow3Devo) SetManualPaused(isPaused bool) {
 	b.manualLock.Lock()
 	defer b.manualLock.Unlock()
 	b.ManualPaused = isPaused

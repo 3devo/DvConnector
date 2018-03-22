@@ -371,7 +371,7 @@ func (p *serport) writerNoBuf() {
 var spmutex = &sync.Mutex{}
 var spIsOpening = false
 
-func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool, dtrOn bool) {
+func spHandlerOpen(portname string, baud int, isSecondary bool, dtrOn bool) {
 
 	log.Print("Inside spHandler")
 
@@ -417,95 +417,25 @@ func spHandlerOpen(portname string, baud int, buftype string, isSecondary bool, 
 		log.Print("Error opening port " + err.Error())
 		//h.broadcastSys <- []byte("Error opening port. " + err.Error())
 		h.broadcastSys <- []byte("{\"Cmd\":\"OpenFail\",\"Desc\":\"Error opening port. " + err.Error() + "\",\"Port\":\"" + conf.Name + "\",\"Baud\":" + strconv.Itoa(conf.Baud) + "}")
-
 		return
 	}
 	log.Print("Opened port successfully")
 	sp.ResetInputBuffer()
 	sp.ResetOutputBuffer()
+	if dtrOn {
+		sp.SetDTR(false)
+	}
 	//p := &serport{send: make(chan []byte, 256), portConf: conf, portIo: sp}
 	// we can go up to 500,000 lines of gcode in the buffer
-	p := &serport{sendBuffered: make(chan Cmd, 500000), sendNoBuf: make(chan Cmd), portConf: conf, portIo: sp, serialPort: sp, BufferType: buftype, IsPrimary: isPrimary, IsSecondary: isSecondary, isFeedRateOverrideOn: false}
+	p := &serport{sendBuffered: make(chan Cmd, 500000), sendNoBuf: make(chan Cmd), portConf: conf, portIo: sp, serialPort: sp, BufferType: "3Devo", IsPrimary: isPrimary, IsSecondary: isSecondary, isFeedRateOverrideOn: false}
 	// if user asked for a buffer watcher, i.e. tinyg/grbl then attach here
-	if buftype == "tinyg_old" {
 
-		bw := &BufferflowTinyg{Name: "tinyg", parent_serport: p}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	} else if buftype == "tinyg" {
-
-		bw := &BufferflowTinygV2{Name: "tinyg_v2", parent_serport: p}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-
-	} else if buftype == "tinygg2" {
-
-		bw := &BufferflowTinygG2{Name: "tinygg2", parent_serport: p}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	} else if buftype == "tinyg_linemode" {
-
-		bw := &BufferflowTinygPktMode{Name: "tinyg_linemode", parent_serport: p}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	} else if buftype == "tinyg_tidmode" {
-
-		bw := &BufferflowTinygTidMode{Name: "tinyg_tidmode", parent_serport: p}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-
-	} else if buftype == "dummypause" {
-
-		// this is a dummy pause type bufferflow object
-		// to test artificially a delay on the serial port write
-		// it just pauses 3 seconds on each serial port write
-		bw := &BufferflowDummypause{}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	} else if buftype == "timed" {
-
-		// this is a timed bufferflow taken from what the Arduino
-		// guys did to reduce the amount of json packets coming
-		// back from the server. by adding a timer we can collect data
-		// first and then send back. we only add 16ms so it's not too bad
-		bw := &BufferflowTimed{Name: "timed", Port: portname, Output: h.broadcastSys, Input: make(chan string)}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	} else if buftype == "nodemcu" {
-
-		// nodemcu buffer only sends data back per line (which might be a bad call)
-		// and it only sends 1 line at a time to the device and releases the next line
-		// when it sees a > come back
-		bw := &BufferflowNodeMcu{Name: "nodemcu", Port: portname}
-		bw.Init()
-		p.bufferwatcher = bw
-	} else if buftype == "grbl" {
-		// grbl bufferflow
-		// store port as parent_serport for use in intializing a status query loop for '?'
-		bw := &BufferflowGrbl{Name: "grbl", parent_serport: p}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	} else if buftype == "marlin" {
-		// marlin bufferflow
-		// store port as parent_serport for use in intializing a status query loop for '?'
-		bw := &BufferflowMarlin{Name: "marlin", parent_serport: p}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	} else {
-		bw := &BufferflowDefault{}
-		bw.Init()
-		bw.Port = portname
-		p.bufferwatcher = bw
-	}
+	// nodemcu buffer only sends data back per line (which might be a bad call)
+	// and it only sends 1 line at a time to the device and releases the next line
+	// when it sees a > come back
+	bw := &Bufferflow3Devo{Name: "3devo", Port: portname}
+	bw.Init()
+	p.bufferwatcher = bw
 
 	sh.register <- p
 	defer func() { sh.unregister <- p }()
@@ -560,9 +490,7 @@ func spHandlerClose(p *serport) {
 	//close the port
 	//elicit response from hardware to close out p.reader()
 	_, _ = p.portIo.Write([]byte("?"))
-
 	p.bufferwatcher.Close()
-	p.serialPort.SetDTR(false)
 	p.portIo.Close()
 	// unregister myself
 	// we already have a deferred unregister in place from when

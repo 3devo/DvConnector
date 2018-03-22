@@ -53,7 +53,7 @@ func (h *hub) run() {
 			h.connections[c] = true
 			// send supported commands
 			c.send <- []byte("{\"Version\" : \"" + version + "\"} ")
-			c.send <- []byte("{\"Commands\" : [\"list\", \"open [portName] [baud] [bufferAlgorithm (optional)]\", \"send [portName] [cmd]\", \"sendnobuf [portName] [cmd]\", \"sendjson {P:portName, Data:[{D:cmdStr, Id:idStr}]}\",  \"close [portName]\", \"bufferalgorithms\", \"baudrates\", \"restart\", \"exit\", \"broadcast [anythingToRegurgitate]\", \"hostname\", \"version\", \"program [portName] [core:architecture:name] [path/to/binOrHexFile]\", \"programfromurl [portName] [core:architecture:name] [urlToBinOrHexFile]\", \"execruntime\", \"exec [command] [arg1] [arg2] [...]\"]} ")
+			c.send <- []byte("{\"Commands\" : [\"list\", \"open [portName] [Dtr]\", \"send [portName] [cmd]\", \"sendnobuf [portName] [cmd]\", \"sendjson {P:portName, Data:[{D:cmdStr, Id:idStr}]}\",  \"close [portName]\", \"bufferalgorithms\", \"baudrates\", \"restart\", \"exit\", \"broadcast [anythingToRegurgitate]\", \"hostname\", \"version\", \"program [portName] [core:architecture:name] [path/to/binOrHexFile]\", \"programfromurl [portName] [core:architecture:name] [urlToBinOrHexFile]\", \"execruntime\", \"exec [command] [arg1] [arg2] [...]\"]} ")
 			c.send <- []byte("{\"Hostname\" : \"" + *hostname + "\"} ")
 		case c := <-h.unregister:
 			delete(h.connections, c)
@@ -139,7 +139,7 @@ func checkCmd(m []byte) {
 			dtrOn = true
 		}
 
-		go spHandlerOpen(args[1], 115200, "nodemcu", false, dtrOn)
+		go spHandlerOpen(args[1], 115200, false, dtrOn)
 
 	} else if strings.HasPrefix(sl, "close") {
 
@@ -196,8 +196,6 @@ func checkCmd(m []byte) {
 		// User is wanting us to tweak the feedrate on-the-fly
 		go spFeedRateOverride(s)
 
-	} else if strings.HasPrefix(sl, "bufferalgorithm") {
-		go spBufferAlgorithms()
 	} else if strings.HasPrefix(sl, "baudrate") {
 		go spBaudRates()
 	} else if strings.HasPrefix(sl, "broadcast") {
