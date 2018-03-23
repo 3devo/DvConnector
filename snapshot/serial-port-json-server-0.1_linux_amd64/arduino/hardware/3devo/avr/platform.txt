@@ -1,2 +1,0 @@
-name=3Devo boards
-version=1.0.0
