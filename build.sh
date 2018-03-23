@@ -20,7 +20,7 @@ error() {
     local code="${3:-1}"
     echo -e "\e[31mError on or near line ${parent_lineno}"
     echo "Please check the error.log for more information"
-    return 1
+    exit
 }
 
 trap 'error ${LINENO}' ERR
@@ -58,7 +58,7 @@ function build_frontend
     cd $startDir
     echo -e "\e[32mBUILDING FRONTEND"
     echo "* Updating submodule"
-    if git submodule update --remote 1>/dev/null 2>>/dev/null; then
+    if git submodule update --remote 1>/dev/null 2>>$startDir/error.log; then
         echo "  - Update complete"
     else
         echo -e " \e[31m - Failed updating submodule"  >&2
@@ -78,7 +78,7 @@ function build_frontend
 function build_connector
 {
     cd $startDir
-    echo -e "\e[32mBUILDING CONNECTOR" >&2
+    echo -e "\e[32mBUILDING CONNECTOR\e[31m" >&2
     if ! command -v go > /dev/null; then
         echo -e "\e[31mgo not found" >&2
         exit
@@ -124,27 +124,27 @@ function release()
         echo -e "\e[31m  Darwin BUILD FAILED"
     fi
 
-    github_release $1 "$*"
+    github_release $1 "$*" || error $LINENO
 }
 
 function github_release()
 {
     echo "Creating release for feconnector $2"
 
-    git tag -a v$1 -m "$2" 1>/dev/null 2>> $startDir/error.log
-    git push origin v$1 1>/dev/null 2>> $startDir/error.log
+    git tag -a v$1 -m "$2" 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    git push origin v$1 1>/dev/null 2>> $startDir/error.log || error $LINENO
     echo ""
     echo "Before creating release"
-    github-release info
+    github-release info || error $LINENO
 
     github-release release \
     --tag v$1 \
     --name "Feconnector" \
-    --description "A server that can connect to the next 1.0 for control and logging" \
+    --description "A server that can connect to the next 1.0 for control and logging" \ || error $LINENO
 
     echo ""
     echo "After creating release"
-    github-release info
+    github-release info || error $LINENO
 
     echo ""
     echo "Uploading binaries"
@@ -152,23 +152,23 @@ function github_release()
     github-release upload \
     --tag v$1 \
     --name "feconnector-$1_linux_amd64.tar.gz" \
-    --file release/feconnector-$1_linux_amd64.tar.gz
+    --file release/feconnector-$1_linux_amd64.tar.gz || error $LINENO
     github-release upload \
     --tag v$1 \
     --name "feconnector-$1_linux_386.tar.gz" \
-    --file release/feconnector-$1_linux_386.tar.gz
+    --file release/feconnector-$1_linux_386.tar.gz || error $LINENO
     github-release upload \
     --tag v$1 \
     --name "feconnector-$1_linux_arm.tar.gz" \
-    --file release/feconnector-$1_linux_arm.tar.gz
+    --file release/feconnector-$1_linux_arm.tar.gz || error $LINENO
     github-release upload \
     --tag v$1 \
     --name "feconnector-$1_windows_386.zip" \
-    --file release/feconnector-$1_windows_386.zip
+    --file release/feconnector-$1_windows_386.zip || error $LINENO
     github-release upload \
     --tag v$1 \
     --name "feconnector-$1_windows_amd64.zip" \
-    --file release/feconnector-$1_windows_amd64.zip
+    --file release/feconnector-$1_windows_amd64.zip || error $LINENO
     echo ""
     echo "Done"
     echo "Release can be found at -> https://github.com/3devo/FeConnector/releases"
