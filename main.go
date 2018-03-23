@@ -37,7 +37,7 @@ var (
 	scert     = flag.String("scert", "cert.pem", "https certificate file")
 	skey      = flag.String("skey", "key.pem", "https key file")
 	hibernate = flag.Bool("hibernate", false, "start hibernated")
-	directory = flag.String("d", "./dist", "the directory of static file to host")
+	directory = flag.String("d", "./public", "the directory of static file to host")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
 	verbose = flag.Bool("v", false, "show debug logging")
