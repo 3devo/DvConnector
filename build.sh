@@ -3,8 +3,9 @@
 #abort on error
 set -e
 startDir=$(pwd)
+releaseDir="./release/feconnector"
 echo "" > $startDir/error.log
-BUILDTOOLS=(node yarn go github-release zip tar)
+BUILDTOOLS=(go github-release zip tar)
 echo -e " _____    ___     __   ___   ____   ____     ___     __  ______   ___   ____  "
 echo -e "|     |  /  _]   /  ] /   \ |    \ |    \   /  _]   /  ]|      | /   \ |    \ "
 echo -e "|   __| /  [_   /  / |     ||  _  ||  _  | /  [_   /  / |      ||     ||  D  )"
@@ -30,7 +31,6 @@ function usage
     echo "usage: ./build.sh [-c || -f || -r 0.1 \"cool release\" ||  -h]"
     echo "   ";
     echo "  -c             | --connector           : Build connector";
-    echo "  -f             | --frontend            : Build frontend";
     echo "  -r tag message | --release tag message : Build release with tag and message";
     echo "  -h             | --help                : This help message";
 }
@@ -43,7 +43,6 @@ function parse_args
     while [ "$1" != "" ]; do
         case "$1" in
             -c | --connector )            build_connector;        shift;;
-            -f | --frontend )             build_frontend;         shift;;
             -r | --release )              release $2 $3;          shift;;
             -h | --help )                 usage;                  exit;; # quit and show usage
         esac
@@ -52,28 +51,6 @@ function parse_args
     # restore positional args
     set -- "${args[@]}"
 }
-
-function build_frontend
-{
-    cd $startDir
-    echo -e "\e[32mBUILDING FRONTEND"
-    echo "* Updating submodule"
-    if git submodule update --remote 1>/dev/null 2>>$startDir/error.log; then
-        echo "  - Update complete"
-    else
-        echo -e " \e[31m - Failed updating submodule"  >&2
-        exit
-    fi
-
-    echo "* Building frontend"
-    if cd fefrontend && yarn  && yarn build; then
-        echo "  - Done building frontend"
-    else
-        echo -e "\e[31m - Failed building frontend"  >&2
-        exit
-    fi
-}
-
 
 function build_connector
 {
@@ -100,7 +77,6 @@ function release()
     rm -rf release && mkdir -p release
     echo -e "\e[32mBUILDING RELEASE - \e[33m$*"
     echo -e "\e[33m-------------------------\e[32m"
-    build_frontend
 
     if ! build_linux $1 "amd64"; then
         echo -e "\e[31m  LINUX AMD64 BUILD FAILED"
@@ -130,45 +106,69 @@ function release()
 function github_release()
 {
     echo "Creating release for feconnector $2"
-
-    git tag -a v$1 -m "$2" 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    git push origin v$1 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    cd $startDir
+    git tag -a $1 -m "$2" 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    git push origin $1 1>/dev/null 2>> $startDir/error.log || error $LINENO
     echo ""
     echo "Before creating release"
-    github-release info || error $LINENO
+    github-release info -u 3devo -r feconnector || error $LINENO
 
     github-release release \
-    --tag v$1 \
-    --name "Feconnector" \
-    --description "A server that can connect to the next 1.0 for control and logging" \ || error $LINENO
+    --user 3devo \
+    --name "Feconnector - $1" \
+    --tag $1 \
+    --repo feconnector \
+    --description "A server that can connect to the next 1.0 for control and logging\r\n\r\nVersion:\r\n$2" || error $LINENO
 
     echo ""
     echo "After creating release"
-    github-release info || error $LINENO
+    github-release info -u 3devo -r feconnector || error $LINENO
 
     echo ""
     echo "Uploading binaries"
 
     github-release upload \
-    --tag v$1 \
+    --tag $1 \
+    --user 3devo \
+    --repo feconnector \
     --name "feconnector-$1_linux_amd64.tar.gz" \
-    --file release/feconnector-$1_linux_amd64.tar.gz || error $LINENO
+    --file $releaseDir-$1_linux_amd64.tar.gz || error $LINENO
+
     github-release upload \
-    --tag v$1 \
+    --tag $1 \
+    --user 3devo \
+    --repo feconnector \
     --name "feconnector-$1_linux_386.tar.gz" \
-    --file release/feconnector-$1_linux_386.tar.gz || error $LINENO
+    --file $releaseDir-$1_linux_386.tar.gz || error $LINENO
+
     github-release upload \
-    --tag v$1 \
+    --tag $1 \
+    --user 3devo \
+    --repo feconnector \
     --name "feconnector-$1_linux_arm.tar.gz" \
-    --file release/feconnector-$1_linux_arm.tar.gz || error $LINENO
+    --file $releaseDir-$1_linux_arm.tar.gz || error $LINENO
+
     github-release upload \
-    --tag v$1 \
+    --tag $1 \
+    --user 3devo \
+    --repo feconnector \
     --name "feconnector-$1_windows_386.zip" \
-    --file release/feconnector-$1_windows_386.zip || error $LINENO
+    --file $releaseDir-$1_windows_386.zip || error $LINENO
+
     github-release upload \
-    --tag v$1 \
+    --tag $1 \
+    --user 3devo \
+    --repo feconnector \
     --name "feconnector-$1_windows_amd64.zip" \
-    --file release/feconnector-$1_windows_amd64.zip || error $LINENO
+    --file $releaseDir-$1_windows_amd64.zip || error $LINENO
+
+    github-release upload \
+    --tag $1 \
+    --user 3devo \
+    --repo feconnector \
+    --name "feconnector-$1_darwin_amd64.zip" \
+    --file $releaseDir-$1_darwin_amd64.zip || error $LINENO
+
     echo ""
     echo "Done"
     echo "Release can be found at -> https://github.com/3devo/FeConnector/releases"
@@ -180,9 +180,9 @@ function build_linux()
 {
     echo -e "\e[32mBuilding Linux $2"
     cd $startDir
-    mkdir release/feconnector-$1_linux_$2
-    cp -r fefrontend/dist ./release/feconnector-$1_linux_$2 1>/dev/null 2>> $startDir/error.log && cp -r default-files/* ./release/feconnector-$1_linux_$2 || error $LINENO
-    env GOOS=linux GOARCH=$2 go build -tags="cli" -o release/feconnector-$1_linux_$2/feconnector 1>/dev/null 2>> $startDir/error.log  || error $LINENO
+    mkdir $releaseDir-$1_linux_$2
+    cp -r default-files/* $releaseDir-$1_linux_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    env GOOS=linux GOARCH=$2 go build -tags="cli" -o $releaseDir-$1_linux_$2/feconnector 1>/dev/null 2>> $startDir/error.log  || error $LINENO
     cd release
     tar -zcvf feconnector-$1_linux_$2.tar.gz feconnector-$1_linux_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
     cd $startDir
@@ -191,23 +191,23 @@ function build_linux()
 function build_windows()
 {
     echo -e "\e[32mBuilding Windows $2"
-    mkdir release/feconnector-$1_windows_$2
-    cp -r fefrontend/dist ./release/feconnector-$1_windows_$2 1>/dev/null 2>> $startDir/error.log  && cp -r default-files/* ./release/feconnector-$1_windows_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    env GOOS=windows GOARCH=$2 go build -v -o release/feconnector-$1_windows_$2/feconnector.exe 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    cd release/feconnector-$1_windows_$2
+    mkdir $releaseDir-$1_windows_$2
+    cp -r default-files/* $releaseDir-$1_windows_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    env GOOS=windows GOARCH=$2 go build -v -o $releaseDir-$1_windows_$2/feconnector.exe 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    cd $releaseDir-$1_windows_$2
     zip -r ../feconnector-$1_windows_$2.zip * 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    cd ../..
+    cd $startDir
 }
 
 function build_osx()
 {
     echo -e "\e[32mBuilding Darwin x64"
-    mkdir release/feconnector-$1_darwin_amd64
-    cp -r fefrontend/dist ./release/feconnector-$1_darwin_amd64 1>/dev/null 2>> $startDir/error.log && cp -r default-files/* ./release/feconnector-$1_darwin_amd64 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    env GOOS=darwin GOARCH=amd64 go build -tags="cli" -o release/feconnector-$1_darwin_amd64/feconnector 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    cd release/feconnector-$1_darwin_amd64
+    mkdir $releaseDir-$1_darwin_amd64
+    cp -r default-files/* $releaseDir-$1_darwin_amd64 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    env GOOS=darwin GOARCH=amd64 go build -tags="cli" -o $releaseDir-$1_darwin_amd64/feconnector 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    cd $releaseDir-$1_darwin_amd64
     zip -r ../feconnector-$1_darwin_amd64.zip * 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    cd ../..
+    cd $startDir
 }
 
 function run

@@ -1,7 +1,0 @@
-[submodule "arduino"]
-	path = arduino
-	url = https://github.com/facchinm/arduino-flash-tools
-[submodule "fefrontend"]
-	path = fefrontend
-	url = git@github.com:3devo/fefrontend
-	branch = dashboard-impl
