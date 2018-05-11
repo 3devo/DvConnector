@@ -24,7 +24,6 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
-	"github.com/skratchdot/open-golang/open"
 	"github.com/tidwall/gjson"
 )
 
@@ -113,7 +112,7 @@ func main() {
 	if *isLaunchSelf {
 		launchSelfLater()
 	} else {
-		open.Run("http://localhost:8989")
+		// open.Run("http://localhost:8989")
 	}
 
 	// see if they want to just create startup script

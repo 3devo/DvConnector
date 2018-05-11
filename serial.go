@@ -126,6 +126,7 @@ func (sh *serialhub) run() {
 	//s := ser.open()
 	//ser.s := s
 	//ser.write(s, []byte("hello serial data"))
+	go spHandlerOpen("com4", 115200, false, true)
 	for {
 		select {
 		case p := <-sh.register:
