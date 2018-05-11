@@ -140,6 +140,16 @@ func (p *serport) reader() {
 	commandCounter := uint8(0)
 	failCounter := 0
 	succesCounter := 0
+	test := Frame{sequence: uint8(1),
+		command: uint8(10),
+		length:  4,
+		payload: []byte("bUUb")}
+	log.Print("========================")
+	test.UnStuffPayload()
+	log.Print(test.payload)
+
+	test.StuffPayload()
+	log.Print(test.payload)
 
 ReadFrames:
 	for {
