@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"encoding/json"
-	"fmt"
 	//"github.com/johnlauer/goserial"
 	"sync"
 
@@ -15,6 +14,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/3devo/feconnector/feProtocol"
 	serial "github.com/bob-thomas/go-serial"
 	. "github.com/logrusorgru/aurora"
 	"github.com/sigurn/crc8"
@@ -128,29 +128,11 @@ func (bufferedreader *BufferedReader) readBytes(n int) ([]byte, bool, int) {
 	bytes := make([]byte, n)
 	read, err := bufferedreader.portIo.Read(bytes)
 	return bytes, (read < 0 || err != nil), read
-
 }
 
 func (p *serport) reader() {
-	//var buf bytes.Buffer
-	// ch := make([]byte, 1024)
-	// timeCheckOpen := time.Now()\
-	table := crc8.MakeTable(crc8.Params{0x07, 0xff, false, false, 0x00, 0xF4, "CRC-8"})
 	testReader := BufferedReader{portIo: p.portIo}
-	commandCounter := uint8(0)
-	failCounter := 0
-	succesCounter := 0
-	test := Frame{sequence: uint8(1),
-		command: uint8(10),
-		length:  4,
-		payload: []byte("bUUb")}
-	log.Print("========================")
-	test.UnStuffPayload()
-	log.Print(test.payload)
-
-	test.StuffPayload()
-	log.Print(test.payload)
-
+	handler := feProtocol.FeProtocolHandler{}
 ReadFrames:
 	for {
 
@@ -168,28 +150,26 @@ ReadFrames:
 		frame := buffer
 		if !err && read > 0 {
 			switch frame[0] {
-			case START_FRAME, START_FRAME ^ SEQUENCE_MASK:
+			case feProtocol.START_FRAME, feProtocol.START_FRAME ^ feProtocol.SEQUENCE_MASK:
 				sequence := 0
 				if frame[0] != 0xaa {
 					sequence = 1
 				}
 				buffer, _, _ = testReader.readBytes(1)
 				command := buffer
-				commandCounter = buffer[0]
 				buffer, _, _ = testReader.readBytes(2)
-				length := buffer
+				payloadLength := buffer
 				escapeByteFound := false
 				waitingForEscapeByte := false
 				escapeByte := uint8(0)
 				payload := []byte{}
 				read := 0
 
-				for read < int(binary.LittleEndian.Uint16(length)) {
+				for read < int(binary.LittleEndian.Uint16(payloadLength)) {
 					buffer, _, b := testReader.readBytes(1)
-					// log.Print(buffer)
 					if b > 0 {
 						switch buffer[0] {
-						case START_FRAME, START_FRAME ^ SEQUENCE_MASK, END_FRAME:
+						case feProtocol.START_FRAME, feProtocol.START_FRAME ^ feProtocol.SEQUENCE_MASK, feProtocol.END_FRAME:
 							{
 								if waitingForEscapeByte && escapeByte == buffer[0] {
 									escapeByteFound = true
@@ -203,6 +183,7 @@ ReadFrames:
 							{
 								if waitingForEscapeByte && !escapeByteFound {
 									log.Print(Red("Failed frame - end/start in payload or length corruption"))
+									handler.OnFrameError(feProtocol.PAYLOAD_CORRUPTION)
 									continue ReadFrames
 								}
 								waitingForEscapeByte = false
@@ -219,48 +200,32 @@ ReadFrames:
 				var crc_sum []byte
 				crc_sum = append(crc_sum, frame...)
 				crc_sum = append(crc_sum, command...)
-				crc_sum = append(crc_sum, length...)
+				crc_sum = append(crc_sum, payloadLength...)
 				crc_sum = append(crc_sum, payload...)
 				crc_sum = append(crc_sum, end...)
-				calc_crc := crc8.Checksum(crc_sum, table)
+				calc_crc := crc8.Checksum(crc_sum, crc8Table)
 				crc_check := crc[0] == calc_crc
-				if end[0] != END_FRAME {
+				if end[0] != feProtocol.END_FRAME {
 					log.Print(Red("Failed frame - no end frame"))
+					handler.OnFrameError(feProtocol.PAYLOAD_CORRUPTION)
 					continue ReadFrames
 				}
 				if !crc_check {
 					log.Print(Red("Failed frame - crc error"))
-					failCounter++
+					handler.OnFrameError(feProtocol.CRC)
 					continue ReadFrames
 				} else {
-					frame := Frame{sequence: uint8(sequence),
-						command: uint8(command[0]),
-						length:  binary.LittleEndian.Uint16(length),
-						payload: payload}
-					log.Print(Green("START frame"))
-					frame.Print()
-					log.Print(Green("END frame\n\n"))
-					succesCounter++
+					frame := feProtocol.Frame{
+						Sequence: uint8(sequence),
+						Command:  uint8(command[0]),
+						Length:   binary.LittleEndian.Uint16(payloadLength),
+						Payload:  payload}
+					handler.OnFrameReceived(&frame)
 				}
-				d := fmt.Sprintf("SUCCESS -> %v FAILED -> %v", succesCounter, failCounter)
-
-				newFrame := Frame{
-					sequence: 1,
-					command:  commandCounter,
-					length:   uint16(len(d)),
-					payload:  []byte(d)}
-				startFrame := uint8(START_FRAME)
-				if newFrame.sequence == 1 {
-					startFrame = START_FRAME ^ SEQUENCE_MASK
-				}
-				packet := []byte{startFrame}
-				packet = append(packet, newFrame.ToBytes()...)
-				packet = append(packet, []byte{crc8.Checksum(append(packet, []byte{END_FRAME}...), table)}...)
-				packet = append(packet, []byte{END_FRAME}...)
-				p.portIo.Write(packet)
-			case END_FRAME:
+			case feProtocol.END_FRAME:
 				log.Print(Red("Failed frame - no start frame"))
 			}
+
 		}
 	}
 

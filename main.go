@@ -24,6 +24,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
+	"github.com/sigurn/crc8"
 	"github.com/tidwall/gjson"
 )
 
@@ -73,6 +74,7 @@ var (
 	ErrFileConflict = errors.New("File already exists")
 	ErrFileInternal = errors.New("Internal")
 	ErrFileNotFound = errors.New("File not found")
+	crc8Table       = crc8.MakeTable(crc8.Params{0x07, 0xff, false, false, 0x00, 0xF4, "CRC-8"})
 )
 
 type NullWriter int
