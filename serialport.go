@@ -119,34 +119,19 @@ type SpPortMessage struct {
 	D string // the data, i.e. G0 X0 Y0
 }
 
-type BufferedReader struct {
-	buffer []byte
-	portIo io.ReadWriteCloser
-}
-
-func (bufferedreader *BufferedReader) readBytes(n int) ([]byte, bool, int) {
-	bytes := make([]byte, n)
-	read, err := bufferedreader.portIo.Read(bytes)
-	return bytes, (read < 0 || err != nil), read
-}
-
 func (p *serport) reader() {
-	testReader := BufferedReader{portIo: p.portIo}
-	handler := feProtocol.FeProtocolHandler{}
-ReadFrames:
+	testReader := feProtocol.BufferedReader{PortIo: p.portIo}
+	handler := feProtocol.FeProtocolHandler{
+		Transport: testReader}
+
 	for {
-
-		// n, err := p.portIo.Read(ch)
-
-		//if we detect that port is closing, break out o this for{} loop.
 		if p.isClosing {
 			strmsg := "Shutting down reader on " + p.portConf.Name
 			log.Println(strmsg)
 			h.broadcastSys <- []byte(strmsg)
 			break
 		}
-
-		buffer, err, read := testReader.readBytes(1)
+		buffer, err, read := testReader.ReadBytes(1)
 		frame := buffer
 		if !err && read > 0 {
 			switch frame[0] {
@@ -155,48 +140,15 @@ ReadFrames:
 				if frame[0] != 0xaa {
 					sequence = 1
 				}
-				buffer, _, _ = testReader.readBytes(1)
-				command := buffer
-				buffer, _, _ = testReader.readBytes(2)
-				payloadLength := buffer
-				escapeByteFound := false
-				waitingForEscapeByte := false
-				escapeByte := uint8(0)
-				payload := []byte{}
-				read := 0
-
-				for read < int(binary.LittleEndian.Uint16(payloadLength)) {
-					buffer, _, b := testReader.readBytes(1)
-					if b > 0 {
-						switch buffer[0] {
-						case feProtocol.START_FRAME, feProtocol.START_FRAME ^ feProtocol.SEQUENCE_MASK, feProtocol.END_FRAME:
-							{
-								if waitingForEscapeByte && escapeByte == buffer[0] {
-									escapeByteFound = true
-								}
-								escapeByte = buffer[0]
-								waitingForEscapeByte = true
-								break
-							}
-
-						default:
-							{
-								if waitingForEscapeByte && !escapeByteFound {
-									log.Print(Red("Failed frame - end/start in payload or length corruption"))
-									handler.OnFrameError(feProtocol.PAYLOAD_CORRUPTION)
-									continue ReadFrames
-								}
-								waitingForEscapeByte = false
-								escapeByteFound = false
-							}
-
-						}
-						read = read + b
-						payload = append(payload, buffer[:b]...)
-					}
+				command, _, _ := testReader.ReadBytes(1)
+				payloadLength, _, _ := testReader.ReadBytes(2)
+				payload, err := handler.ReadInPayload(binary.LittleEndian.Uint16(payloadLength))
+				if err {
+					handler.OnFrameError(feProtocol.PAYLOAD_CORRUPTION)
+					break
 				}
-				crc, _, _ := testReader.readBytes(1)
-				end, _, _ := testReader.readBytes(1)
+				crc, _, _ := testReader.ReadBytes(1)
+				end, _, _ := testReader.ReadBytes(1)
 				var crc_sum []byte
 				crc_sum = append(crc_sum, frame...)
 				crc_sum = append(crc_sum, command...)
@@ -204,16 +156,15 @@ ReadFrames:
 				crc_sum = append(crc_sum, payload...)
 				crc_sum = append(crc_sum, end...)
 				calc_crc := crc8.Checksum(crc_sum, crc8Table)
+
 				crc_check := crc[0] == calc_crc
 				if end[0] != feProtocol.END_FRAME {
-					log.Print(Red("Failed frame - no end frame"))
 					handler.OnFrameError(feProtocol.PAYLOAD_CORRUPTION)
-					continue ReadFrames
+					break
 				}
 				if !crc_check {
-					log.Print(Red("Failed frame - crc error"))
 					handler.OnFrameError(feProtocol.CRC)
-					continue ReadFrames
+					break
 				} else {
 					frame := feProtocol.Frame{
 						Sequence: uint8(sequence),
@@ -228,87 +179,6 @@ ReadFrames:
 
 		}
 	}
-
-	// 	// read can return legitimate bytes as well as an error
-	// 	// so process the bytes if n > 0
-	// 	if n > 0 {
-	// 		//log.Print("Read " + strconv.Itoa(n) + " bytes ch: " + string(ch))
-	// 		data := string(ch[:n])
-	// 		//log.Print("The data i will convert to json is:")
-	// 		//log.Print(data)
-
-	// 		// give the data to our bufferflow so it can do it's work
-	// 		// to read/translate the data to see if it wants to block
-	// 		// writes to the serialport. each bufferflow type will decide
-	// 		// this on its own based on its logic, i.e. tinyg vs grbl vs others
-	// 		//p.b.bufferwatcher..OnIncomingData(data)
-	// 		p.bufferwatcher.OnIncomingData(data)
-
-	// 		// see if the OnIncomingData handled the broadcast back
-	// 		// to the user. this option was added in case the OnIncomingData wanted
-	// 		// to do something fancier or implementation specific, i.e. TinyG Buffer
-	// 		// actually sends back data on a perline basis rather than our method
-	// 		// where we just send the moment we get it. the reason for this is that
-	// 		// the browser was sometimes getting back packets out of order which
-	// 		// of course would screw things up when parsing
-
-	// 		if p.bufferwatcher.IsBufferGloballySendingBackIncomingData() == false {
-	// 			//m := SpPortMessage{"Alice", "Hello"}
-	// 			m := SpPortMessage{p.portConf.Name, data}
-	// 			//log.Print("The m obj struct is:")
-	// 			//log.Print(m)
-
-	// 			//b, err := json.MarshalIndent(m, "", "\t")
-	// 			b, err := json.Marshal(m)
-	// 			if err != nil {
-	// 				log.Println(err)
-	// 				h.broadcastSys <- []byte("Error creating json on " + p.portConf.Name + " " +
-	// 					err.Error() + " The data we were trying to convert is: " + string(ch[:n]))
-	// 				break
-	// 			}
-	// 			//log.Print("Printing out json byte data...")
-	// 			//log.Print(string(b))
-	// 			h.broadcastSys <- b
-	// 			//h.broadcastSys <- []byte("{ \"p\" : \"" + p.portConf.Name + "\", \"d\": \"" + string(ch[:n]) + "\" }\n")
-	// 		}
-	// 	}
-
-	// 	// double check that we got characters in the buffer
-	// 	// before deciding if an EOF is legitimately a reason
-	// 	// to close the port because we're seeing that on some
-	// 	// os's like Linux/Ubuntu you get an EOF when you open
-	// 	// the port. Perhaps the EOF was buffered from a previous
-	// 	// close and the OS doesn't clear out that buffer on a new
-	// 	// connect. This means we'll only catch EOF's when there are
-	// 	// other characters with it, but that seems to work ok
-	// 	if n <= 0 {
-	// 		if err == io.EOF || err == io.ErrUnexpectedEOF {
-	// 			// hit end of file
-	// 			log.Println("Hit end of file on serial port")
-	// 			h.broadcastSys <- []byte("{\"Cmd\":\"OpenFail\",\"Desc\":\"Got EOF (End of File) on port which usually means another app other than Serial Port JSON Server is locking your port. " + err.Error() + "\",\"Port\":\"" + p.portConf.Name + "\",\"Baud\":" + strconv.Itoa(p.portConf.Baud) + "}")
-
-	// 		}
-
-	// 		if err != nil {
-	// 			log.Println(err)
-	// 			h.broadcastSys <- []byte("Error reading on " + p.portConf.Name + " " +
-	// 				err.Error() + " Closing port.")
-	// 			h.broadcastSys <- []byte("{\"Cmd\":\"OpenFail\",\"Desc\":\"Got error reading on port. " + err.Error() + "\",\"Port\":\"" + p.portConf.Name + "\",\"Baud\":" + strconv.Itoa(p.portConf.Baud) + "}")
-	// 			break
-	// 		}
-
-	// 		// Keep track of time difference between two consecutive read with n == 0 and err == nil
-	// 		// we get here if the port has been disconnected while open (cpu usage will jump to 100%)
-	// 		// let's close the port only if the events are extremely fast (<1ms)
-	// 		if err == nil {
-	// 			diff := time.Since(timeCheckOpen)
-	// 			if diff.Nanoseconds() < 1000000 {
-	// 				p.isClosing = true
-	// 			}
-	// 			timeCheckOpen = time.Now()
-	// 		}
-	// 	}
-	// }
 	p.portIo.Close()
 }
 

@@ -3,8 +3,6 @@ package feProtocol
 import (
 	"encoding/binary"
 	"log"
-
-	. "github.com/logrusorgru/aurora"
 )
 
 //Frame is the structure of a frame that's specified in the protocol specification.
@@ -37,48 +35,49 @@ func (frame *Frame) ToBytes() []byte {
 
 //UnstuffPayload removes the escapebytes from the payload
 func (frame *Frame) UnStuffPayload() {
-	payload := frame.Payload
-	escapeByte := uint8(0)
-	for i := 0; i < len(payload)-1; i++ {
-		switch payload[i] {
-		case END_FRAME, START_FRAME, START_FRAME ^ SEQUENCE_MASK:
+	buffer := []byte{}
+	length := int(frame.Length)
+	for i := 0; i < length; i++ {
+		switch frame.Payload[i] {
+		case START_FRAME:
+		case END_FRAME:
 			{
-				log.Print(Green(payload[i]))
-				if escapeByte != 0 {
-					if i+1 < len(payload)-1 {
-						payload = append(payload[:i], payload[i+1:]...)
-					} else {
-						payload = payload[:len(payload)-1]
-					}
-				}
-				escapeByte = payload[i]
+				buffer = append(buffer, frame.Payload[i])
+				i++
+				break
 			}
+		default:
+			buffer = append(buffer, frame.Payload[i])
 		}
 	}
-	frame.Payload = payload
+	frame.Length = uint16(len(buffer))
+	frame.Payload = buffer
 }
 
 //StuffPayload checks the given frame payload
 //For the predefined protocol frames and if they are found
 //They will be stuffed with a copy of the found byte
 func (frame *Frame) StuffPayload() {
-	payload := frame.Payload
+	buffer := []byte{}
 	length := uint16(len(frame.Payload))
-	for i := 0; i < len(frame.Payload); i++ {
-		switch payload[i] {
-		case END_FRAME, START_FRAME, START_FRAME ^ SEQUENCE_MASK:
+	counter := 0
+	for i := 0; i < int(length); i++ {
+		index := uint8(frame.Payload[counter])
+		counter++
+		switch index {
+		case START_FRAME, END_FRAME:
 			{
-				if i < len(frame.Payload)-1 {
-					payload = append(payload[:i], append([]byte{payload[i]}, payload[i:]...)...)
-				} else {
-					payload = append(payload, payload[i])
-				}
+				buffer = append(buffer, index)
 				i++
+				buffer = append(buffer, index)
 				length++
+				break
 			}
+		default:
+			buffer = append(buffer, index)
 		}
 	}
-
 	frame.Length = length
-	frame.Payload = payload
+	frame.Payload = buffer
+	// log.Fatal(length, "  ", string(buffer))
 }
