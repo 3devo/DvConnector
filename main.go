@@ -10,6 +10,7 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 	//"path/filepath"
 	"errors"
@@ -22,16 +23,25 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/3devo/feconnector/models"
+	"github.com/3devo/feconnector/routing"
+	"github.com/3devo/feconnector/utils"
+	"github.com/asdine/storm"
+	"github.com/gorilla/context"
+	"github.com/gorilla/sessions"
 	"github.com/julienschmidt/httprouter"
+	. "github.com/logrusorgru/aurora"
+	"github.com/phayes/freeport"
 	"github.com/rs/cors"
-	"github.com/skratchdot/open-golang/open"
-	"github.com/tidwall/gjson"
+	"github.com/sigurn/crc8"
 )
 
 var (
+	db, _        = storm.Open("feconnector.db")
+	port, _      = freeport.GetFreePort()
 	version      = "1.95"
 	versionFloat = float32(1.95)
-	addr         = flag.String("addr", ":8989", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
+	addr         = flag.String("addr", ":"+strconv.Itoa(port), "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	//	addr  = flag.String("addr", ":8980", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	saddr     = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
 	scert     = flag.String("scert", "cert.pem", "https certificate file")
@@ -70,6 +80,9 @@ var (
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
+	crc8Table = crc8.MakeTable(crc8.Params{0x07, 0xff, false, false, 0x00, 0xF4, "CRC-8"})
+
+	sessionStore = sessions.NewCookieStore([]byte("something-very-secret"))
 
 	ErrFileConflict = errors.New("File already exists")
 	ErrFileInternal = errors.New("Internal")
@@ -96,15 +109,30 @@ func launchSelfLater() {
 }
 
 func main() {
+	flag.Parse()
 	os.MkdirAll("./workspaces", os.ModePerm)
 	os.MkdirAll("./charts", os.ModePerm)
 	os.MkdirAll("./logs", os.ModePerm)
 	os.MkdirAll("./sheets", os.ModePerm)
+
+	defer db.Close()
+
+	sessionStore.Options = &sessions.Options{
+		Path:   "/",
+		MaxAge: 86400}
+
+	ip, err := externalIP()
+	browserAddr := ip + string(*addr)
+	if err != nil {
+		log.Println(err)
+	}
+	if string(*addr)[0] != ":"[0] {
+		browserAddr = string(*addr)
+	}
 	// Test USB list
 	//	GetUsbList()
 
 	// parse all passed in command line arguments
-	flag.Parse()
 
 	// setup logging
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
@@ -113,7 +141,8 @@ func main() {
 	if *isLaunchSelf {
 		launchSelfLater()
 	} else {
-		open.Run("http://localhost:8989")
+		log.Print(browserAddr)
+		// open.Run("http://" + browserAddr)
 	}
 
 	// see if they want to just create startup script
@@ -146,11 +175,6 @@ func main() {
 
 	if *isAllowExec {
 		log.Println("Enabling exec commands because you passed in -allowexec")
-	}
-
-	ip, err := externalIP()
-	if err != nil {
-		log.Println(err)
 	}
 
 	//homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
@@ -223,102 +247,141 @@ func main() {
 	//gpio.PreInit()
 	// when the app exits, clean up our gpio ports
 	//defer gpio.CleanupGpio()
+	env := &utils.Env{Db: db, SessionStore: sessionStore}
+
 	router := httprouter.New()
+	router.GET("/rest/config/:id", routing.GetConfig(env))
+	router.POST("/rest/config/", routing.CreateConfig(env))
+	router.POST("/rest/login", routing.Login(env))
+
 	router.GET("/ws", wsHandler)
-	router.GET("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		http.ServeFile(w, r, "./"+ps.ByName("type")+"/"+ps.ByName("id")+map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
-	})
-	router.DELETE("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// delete file
-		if ps.ByName("id") == "bulk" {
-			bulkDelete(w, r, ps)
-		} else {
-			err := os.Remove("./" + ps.ByName("type") + "/" + ps.ByName("id") + map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			} else {
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprintf(w, "%s deleted without error", ps.ByName("id"))
-			}
-		}
-	})
+	// router.GET("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// 	http.ServeFile(w, r, "./"+ps.ByName("type")+"/"+ps.ByName("id")+map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
+	// })
+	// router.DELETE("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// 	// delete file
+	// 	if ps.ByName("id") == "bulk" {
+	// 		bulkDelete(w, r, ps)
+	// 	} else {
+	// 		err := os.Remove("./" + ps.ByName("type") + "/" + ps.ByName("id") + map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
+	// 		if err != nil {
+	// 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	// 		} else {
+	// 			w.WriteHeader(http.StatusOK)
+	// 			fmt.Fprintf(w, "%s deleted without error", ps.ByName("id"))
+	// 		}
+	// 	}
+	// })
 
-	router.POST("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		items := gjson.Get(string(body), "items")
-		// Bulk add
-		if items.Exists() {
-			items.ForEach(func(key, value gjson.Result) bool {
-				err := saveResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
-				if err == ErrFileInternal {
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return false
-				} else if err == ErrFileConflict {
-					http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
-					return false
-				}
-				return true
-			})
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added bulk %s without error", ps.ByName("type"))
-		} else {
-			// Single add
-			err := saveResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
-			if err == ErrFileInternal {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			} else if err == ErrFileConflict {
-				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
-			}
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "%s Added without error", gjson.Get(string(body), "id").String())
-		}
+	// router.POST("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// 	body, err := ioutil.ReadAll(r.Body)
+	// 	if err != nil {
+	// 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 	}
+	// 	items := gjson.Get(string(body), "items")
+	// 	// Bulk add1
+	// 	if items.Exists() {
+	// 		items.ForEach(func(key, value gjson.Result) bool {
+	// 			err := saveResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
+	// 			if err == ErrFileInternal {
+	// 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 				return false
+	// 			} else if err == ErrFileConflict {
+	// 				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+	// 				return false
+	// 			}
+	// 			return true
+	// 		})
+	// 		w.WriteHeader(http.StatusOK)
+	// 		fmt.Fprintf(w, "Added bulk %s without error", ps.ByName("type"))
+	// 	} else {
+	// 		// Single add
+	// 		err := saveResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
+	// 		if err == ErrFileInternal {
+	// 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 		} else if err == ErrFileConflict {
+	// 			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+	// 		}
+	// 		w.WriteHeader(http.StatusOK)
+	// 		fmt.Fprintf(w, "%s Added without error", gjson.Get(string(body), "id").String())
+	// 	}
 
-	})
+	// })
 
-	router.PUT("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		items := gjson.Get(string(body), "items")
-		// Bulk add
-		if items.Exists() {
-			items.ForEach(func(key, value gjson.Result) bool {
-				err := updateResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
-				if err == ErrFileInternal {
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return false
-				} else if err == ErrFileNotFound {
-					http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-					return false
-				}
-				return true
-			})
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Updated bulk %s without error", ps.ByName("type"))
-		} else {
-			// Single add
-			err := updateResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
-			if err == ErrFileInternal {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			} else if err == ErrFileNotFound {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			} else {
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprintf(w, "%s Updated without error", gjson.Get(string(body), "id").String())
-			}
-		}
-	})
+	// router.PUT("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// 	body, err := ioutil.ReadAll(r.Body)
+	// 	if err != nil {
+	// 		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 	}
+	// 	items := gjson.Get(string(body), "items")
+	// 	// Bulk add
+	// 	if items.Exists() {
+	// 		items.ForEach(func(key, value gjson.Result) bool {
+	// 			err := updateResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
+	// 			if err == ErrFileInternal {
+	// 				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 				return false
+	// 			} else if err == ErrFileNotFound {
+	// 				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	// 				return false
+	// 			}
+	// 			return true
+	// 		})
+	// 		w.WriteHeader(http.StatusOK)
+	// 		fmt.Fprintf(w, "Updated bulk %s without error", ps.ByName("type"))
+	// 	} else {
+	// 		// Single add
+	// 		err := updateResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
+	// 		if err == ErrFileInternal {
+	// 			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+	// 		} else if err == ErrFileNotFound {
+	// 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	// 		} else {
+	// 			w.WriteHeader(http.StatusOK)
+	// 			fmt.Fprintf(w, "%s Updated without error", gjson.Get(string(body), "id").String())
+	// 		}
+	// 	}
+	// })
 
-	router.GET("/rest/:type", listResource)
+	// router.GET("/rest/:type", listResource)
+	// router.GET("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// 	var config models.Config
+	// 	id, err := strconv.Atoi(ps.ByName("id"))
+	// 	if err != nil {
+	// 		http.Error(w, "id should be a number", http.StatusNotAcceptable)
+	// 		return
+	// 	}
+	// 	err = db.One("ID", id, &config)
+	// 	if err != nil {
+	// 		log.Println(err)
+	// 		http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+	// 		return
+	// 	}
+	// 	config.Password = nil
+	// 	json.NewEncoder(w).Encode(config)
+	// })
+
+	// router.POST("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+	// 	body, _ := ioutil.ReadAll(r.Body)
+	// 	config := models.NewConfig(
+	// 		gjson.Get(string(body), "authRequired").Bool(),
+	// 		gjson.Get(string(body), "spectatorsAllowed").Bool(),
+	// 		gjson.Get(string(body), "password").String())
+	// 	log.Print(config)
+	// 	err := db.Save(config)
+	// 	log.Print(Red(err))
+	// 	if err != nil {
+	// 		http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+	// 	} else {
+	// 		w.WriteHeader(http.StatusOK)
+	// 		fmt.Fprintf(w, "Added config without error")
+	// 	}
+	// })
 
 	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
-	handler := cors.AllowAll().Handler(router)
+	handler := cors.AllowAll().Handler(firstTimeSetupWrapper(router))
 	// if err := http.ListenAndServe(*addr, handler); err != nil {
 	// 	fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
 	// 	fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
@@ -343,6 +406,42 @@ type LogFile struct {
 	Name    string `json:"name"`
 	ModDate string `json:"modDate"`
 	Size    int64  `json:"size"`
+}
+
+func authRequired(h httprouter.Handle) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		var config models.Config
+		err := db.One("ID", 1, &config)
+		if err == nil {
+			if config.AuthRequired {
+				session, err := sessionStore.Get(r, "session")
+				if err != nil {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+					return
+				}
+				if session.IsNew {
+					http.Error(w, "Not authorized", http.StatusUnauthorized)
+					return
+				}
+			}
+		}
+		h(w, r, ps)
+	}
+}
+
+func firstTimeSetupWrapper(h http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var config models.Config
+		err := db.One("ID", 1, &config)
+		cookieValue := "true"
+		if err == nil {
+			cookieValue = "false"
+		}
+		expiration := time.Now().Add(time.Hour)
+		cookie := http.Cookie{Name: "firstTimeSetup", Value: cookieValue, Expires: expiration, Path: "/"}
+		http.SetCookie(w, &cookie)
+		h.ServeHTTP(w, r)
+	})
 }
 
 func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
@@ -432,7 +531,7 @@ func bulkDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 func startHttp(ip string, h http.Handler) {
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
-	if err := http.ListenAndServe(*addr, h); err != nil {
+	if err := http.ListenAndServe(*addr, context.ClearHandler(h)); err != nil {
 		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
 		fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
 		log.Fatal("Error ListenAndServe:", err)
