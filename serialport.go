@@ -123,8 +123,25 @@ func (p *serport) reader() {
 	testReader := feProtocol.BufferedReader{PortIo: p.portIo}
 	handler := feProtocol.FeProtocolHandler{
 		Transport: testReader}
-
+	ticker := time.NewTimer(2 * time.Second)
+	go func() {
+		<-ticker.C
+		newFrame := feProtocol.Frame{
+			Sequence: 1,
+			Command:  2,
+			Length:   uint16(3),
+			Payload:  []byte{0, 190, 0}}
+		newFrame.StuffPayload()
+		startFrame := uint8(feProtocol.START_FRAME)
+		packet := []byte{startFrame}
+		packet = append(packet, newFrame.ToBytes()...)
+		packet = append(packet, []byte{crc8.Checksum(append(packet, []byte{feProtocol.END_FRAME}...), crc8Table)}...)
+		packet = append(packet, []byte{feProtocol.END_FRAME}...)
+		p.portIo.Write(packet)
+		log.Println(packet)
+	}()
 	for {
+
 		if p.isClosing {
 			strmsg := "Shutting down reader on " + p.portConf.Name
 			log.Println(strmsg)
@@ -159,10 +176,12 @@ func (p *serport) reader() {
 
 				crc_check := crc[0] == calc_crc
 				if end[0] != feProtocol.END_FRAME {
+					log.Println(crc_sum)
 					handler.OnFrameError(feProtocol.PAYLOAD_CORRUPTION)
 					break
 				}
 				if !crc_check {
+					log.Println(crc[0], calc_crc)
 					handler.OnFrameError(feProtocol.CRC)
 					break
 				} else {

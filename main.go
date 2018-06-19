@@ -69,6 +69,7 @@ var (
 
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
+	comPort = flag.String("port", "com12", "override com port")
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	ErrFileConflict = errors.New("File already exists")

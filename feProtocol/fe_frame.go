@@ -39,6 +39,7 @@ func (frame *Frame) UnStuffPayload() {
 	length := int(frame.Length)
 	for i := 0; i < length; i++ {
 		switch frame.Payload[i] {
+		case START_FRAME ^ SEQUENCE_MASK:
 		case START_FRAME:
 		case END_FRAME:
 			{
@@ -65,7 +66,9 @@ func (frame *Frame) StuffPayload() {
 		index := uint8(frame.Payload[counter])
 		counter++
 		switch index {
-		case START_FRAME, END_FRAME:
+		case START_FRAME ^ SEQUENCE_MASK:
+		case START_FRAME:
+		case END_FRAME:
 			{
 				buffer = append(buffer, index)
 				i++
