@@ -17,7 +17,7 @@ import (
 
 func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var logFiles []models.LogFile
+		logFiles := make([]models.LogFile, 0)
 		query, _ := utils.QueryBuilder(env, r)
 		w.WriteHeader(http.StatusOK)
 		query.Find(&logFiles)

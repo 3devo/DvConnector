@@ -15,11 +15,11 @@ import (
 
 func GetAllCharts(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var Charts []models.Chart
+		charts := make([]models.Chart, 0)
 		query, _ := utils.QueryBuilder(env, r)
 		w.WriteHeader(http.StatusOK)
-		query.Find(&Charts)
-		json.NewEncoder(w).Encode(Charts)
+		query.Find(&charts)
+		json.NewEncoder(w).Encode(charts)
 	}
 }
 
