@@ -235,6 +235,13 @@ func main() {
 	restUrl := fmt.Sprintf("/api/v%v/", string(version))
 	router.GET("/ws", wsHandler)
 
+	/**	LOG FILE ROUTING */
+	router.GET(restUrl+"logFile", routing.GetAllLogFiles(env))
+	router.GET(restUrl+"logFile/:id", routing.GetLogFile(env))
+	router.POST(restUrl+"logFile", routing.CreateLogFile(env))
+	router.DELETE(restUrl+"logFile/:id", routing.DeleteLogFile(env))
+	router.PUT(restUrl+"logFile/:id", routing.UpdateLogFile(env))
+	/** END OF LOG FILE ROUTING */
 
 	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")
