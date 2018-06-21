@@ -22,15 +22,17 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/3devo/feconnector/routing"
+	"github.com/3devo/feconnector/utils"
+	"github.com/asdine/storm"
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"github.com/skratchdot/open-golang/open"
-	"github.com/tidwall/gjson"
 )
 
 var (
-	version      = "1.95"
-	versionFloat = float32(1.95)
+	version      = "0.1.0"
+	versionFloat = float32(0.1)
 	addr         = flag.String("addr", ":8989", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	//	addr  = flag.String("addr", ":8980", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	saddr     = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
@@ -38,6 +40,7 @@ var (
 	skey      = flag.String("skey", "key.pem", "https key file")
 	hibernate = flag.Bool("hibernate", false, "start hibernated")
 	directory = flag.String("d", "./public", "the directory of static file to host")
+	noBrowser = flag.Bool("b", false, "Don't open the webpage")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
 	verbose = flag.Bool("v", false, "show debug logging")
@@ -70,6 +73,7 @@ var (
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
+	db, _ = storm.Open("feconnector.db")
 
 	ErrFileConflict = errors.New("File already exists")
 	ErrFileInternal = errors.New("Internal")
@@ -100,6 +104,7 @@ func main() {
 	os.MkdirAll("./charts", os.ModePerm)
 	os.MkdirAll("./logs", os.ModePerm)
 	os.MkdirAll("./sheets", os.ModePerm)
+	defer db.Close()
 	// Test USB list
 	//	GetUsbList()
 
@@ -113,7 +118,9 @@ func main() {
 	if *isLaunchSelf {
 		launchSelfLater()
 	} else {
-		open.Run("http://localhost:8989")
+		if !*noBrowser {
+			open.Run("http://localhost:8989")
+		}
 	}
 
 	// see if they want to just create startup script
@@ -223,97 +230,11 @@ func main() {
 	//gpio.PreInit()
 	// when the app exits, clean up our gpio ports
 	//defer gpio.CleanupGpio()
+	env := &utils.Env{Db: db}
 	router := httprouter.New()
+	restUrl := fmt.Sprintf("/api/v%v/", string(version))
 	router.GET("/ws", wsHandler)
-	router.GET("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		http.ServeFile(w, r, "./"+ps.ByName("type")+"/"+ps.ByName("id")+map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
-	})
-	router.DELETE("/rest/:type/:id", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		// delete file
-		if ps.ByName("id") == "bulk" {
-			bulkDelete(w, r, ps)
-		} else {
-			err := os.Remove("./" + ps.ByName("type") + "/" + ps.ByName("id") + map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			} else {
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprintf(w, "%s deleted without error", ps.ByName("id"))
-			}
-		}
-	})
 
-	router.POST("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		items := gjson.Get(string(body), "items")
-		// Bulk add
-		if items.Exists() {
-			items.ForEach(func(key, value gjson.Result) bool {
-				err := saveResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
-				if err == ErrFileInternal {
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return false
-				} else if err == ErrFileConflict {
-					http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
-					return false
-				}
-				return true
-			})
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added bulk %s without error", ps.ByName("type"))
-		} else {
-			// Single add
-			err := saveResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
-			if err == ErrFileInternal {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			} else if err == ErrFileConflict {
-				http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
-			}
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "%s Added without error", gjson.Get(string(body), "id").String())
-		}
-
-	})
-
-	router.PUT("/rest/:type", func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		body, err := ioutil.ReadAll(r.Body)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-		}
-		items := gjson.Get(string(body), "items")
-		// Bulk add
-		if items.Exists() {
-			items.ForEach(func(key, value gjson.Result) bool {
-				err := updateResource(ps.ByName("type"), value.Map()["id"].String(), value.String())
-				if err == ErrFileInternal {
-					http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-					return false
-				} else if err == ErrFileNotFound {
-					http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-					return false
-				}
-				return true
-			})
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Updated bulk %s without error", ps.ByName("type"))
-		} else {
-			// Single add
-			err := updateResource(ps.ByName("type"), gjson.Get(string(body), "id").String(), string(body))
-			if err == ErrFileInternal {
-				http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-			} else if err == ErrFileNotFound {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			} else {
-				w.WriteHeader(http.StatusOK)
-				fmt.Fprintf(w, "%s Updated without error", gjson.Get(string(body), "id").String())
-			}
-		}
-	})
-
-	router.GET("/rest/:type", listResource)
 
 	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")
