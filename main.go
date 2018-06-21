@@ -251,6 +251,14 @@ func main() {
 	router.PUT(restUrl+"charts/:id", routing.UpdateChart(env))
 	/** END OF CHART ROUTING */
 
+	/**	CHART ROUTING */
+	router.GET(restUrl+"sheets", routing.GetAllSheets(env))
+	router.GET(restUrl+"sheets/:id", routing.GetSheet(env))
+	router.POST(restUrl+"sheets", routing.CreateSheet(env))
+	router.DELETE(restUrl+"sheets/:id", routing.DeleteSheet(env))
+	router.PUT(restUrl+"sheets/:id", routing.UpdateSheet(env))
+	/** END OF CHART ROUTING */
+
 	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
