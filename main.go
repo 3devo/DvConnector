@@ -241,7 +241,6 @@ func main() {
 	router.POST(restUrl+"logFiles", routing.CreateLogFile(env))
 	router.DELETE(restUrl+"logFiles/:id", routing.DeleteLogFile(env))
 	router.PUT(restUrl+"logFiles/:id", routing.UpdateLogFile(env))
-	/** END OF LOG FILE ROUTING */
 
 	/**	CHART ROUTING */
 	router.GET(restUrl+"charts", routing.GetAllCharts(env))
@@ -249,15 +248,20 @@ func main() {
 	router.POST(restUrl+"charts", routing.CreateChart(env))
 	router.DELETE(restUrl+"charts/:id", routing.DeleteChart(env))
 	router.PUT(restUrl+"charts/:id", routing.UpdateChart(env))
-	/** END OF CHART ROUTING */
 
-	/**	CHART ROUTING */
+	/**	SHEET ROUTING */
 	router.GET(restUrl+"sheets", routing.GetAllSheets(env))
 	router.GET(restUrl+"sheets/:id", routing.GetSheet(env))
 	router.POST(restUrl+"sheets", routing.CreateSheet(env))
 	router.DELETE(restUrl+"sheets/:id", routing.DeleteSheet(env))
 	router.PUT(restUrl+"sheets/:id", routing.UpdateSheet(env))
-	/** END OF CHART ROUTING */
+
+	/**	WORKSPACE ROUTING */
+	router.GET(restUrl+"workspaces", routing.GetAllWorkspaces(env))
+	router.GET(restUrl+"workspaces/:id", routing.GetWorkspace(env))
+	router.POST(restUrl+"workspaces", routing.CreateWorkspace(env))
+	router.DELETE(restUrl+"workspaces/:id", routing.DeleteWorkspace(env))
+	router.PUT(restUrl+"workspaces/:id", routing.UpdateWorkspace(env))
 
 	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")
