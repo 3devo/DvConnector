@@ -236,11 +236,11 @@ func main() {
 	router.GET("/ws", wsHandler)
 
 	/**	LOG FILE ROUTING */
-	router.GET(restUrl+"logFile", routing.GetAllLogFiles(env))
-	router.GET(restUrl+"logFile/:id", routing.GetLogFile(env))
-	router.POST(restUrl+"logFile", routing.CreateLogFile(env))
-	router.DELETE(restUrl+"logFile/:id", routing.DeleteLogFile(env))
-	router.PUT(restUrl+"logFile/:id", routing.UpdateLogFile(env))
+	router.GET(restUrl+"logFiles", routing.GetAllLogFiles(env))
+	router.GET(restUrl+"logFiles/:id", routing.GetLogFile(env))
+	router.POST(restUrl+"logFiles", routing.CreateLogFile(env))
+	router.DELETE(restUrl+"logFiles/:id", routing.DeleteLogFile(env))
+	router.PUT(restUrl+"logFiles/:id", routing.UpdateLogFile(env))
 	/** END OF LOG FILE ROUTING */
 
 	router.NotFound = http.FileServer(http.Dir(*directory))
