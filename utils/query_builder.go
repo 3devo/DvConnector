@@ -28,7 +28,7 @@ func QueryBuilder(env *Env, r *http.Request) (storm.Query, error) {
 	if params.Get("filter") != "" {
 		result := gjson.Parse(string(params.Get("filter")))
 		result.ForEach(func(key, value gjson.Result) bool {
-			selection = append(selection, q.Eq(value.Get("key").String(), value.Get("value").Value()))
+			selection = append(selection, q.Eq(strings.Title(value.Get("key").String()), value.Get("value").Value()))
 			return true
 		})
 		query = env.Db.Select(q.And(selection...))

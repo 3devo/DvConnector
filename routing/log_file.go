@@ -62,7 +62,7 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
 		} else {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added config without error")
+			fmt.Fprintf(w, "Added logFile without error")
 		}
 	}
 }
@@ -86,9 +86,9 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 
 		err = env.Db.Update(&models.LogFile{
 			ID:        id,
-			Name:      gjson.Get(bodyString, "Name").String(),
-			Timestamp: gjson.Get(bodyString, "Timestamp").Int(),
-			HasNote:   gjson.Get(bodyString, "HasNote").Bool(),
+			Name:      gjson.Get(bodyString, "name").String(),
+			Timestamp: gjson.Get(bodyString, "timestamp").Int(),
+			HasNote:   gjson.Get(bodyString, "hasNote").Bool(),
 		})
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
@@ -119,5 +119,6 @@ func DeleteLogFile(env *utils.Env) httprouter.Handle {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
+		fmt.Fprintf(w, "Removed LogFile with %v successfully", id)
 	}
 }
