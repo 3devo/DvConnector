@@ -11,3 +11,9 @@ type StatusResponse struct {
 		Message string `json:"message"`
 	} `json:"body"`
 }
+
+//swagger:parameters GetLogFile UpdateLogFile DeleteLogFile GetChart UpdateChart DeleteChart GetSheet UpdateSheet DeleteSheet GetWorkspace UpdateWorkspace DeleteWorkspace
+type UidPathParam struct {
+	// in: path
+	UUID string `json:"uuid"`
+}
