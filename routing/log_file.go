@@ -7,24 +7,50 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/3devo/feconnector/models"
+	"github.com/3devo/feconnector/routing/responses"
 	"github.com/3devo/feconnector/utils"
 	"github.com/julienschmidt/httprouter"
 	"github.com/tidwall/gjson"
 )
 
+// GetAllLogFiles swagger:route GET /logFiles logFile GetAllLogFiles
+//
+// Handler to retrieve all logFiles
+//
+// This will return all available logs
+//
+// Produces:
+//	application/json
+//
+// Responses:
+//        200: []LogFileResponse
 func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		logFiles := make([]models.LogFile, 0)
+		body := make([]*responses.LogFileResponse, 0)
 		query, _ := utils.QueryBuilder(env, r)
 		w.WriteHeader(http.StatusOK)
 		query.Find(&logFiles)
-		json.NewEncoder(w).Encode(logFiles)
+		for _, file := range logFiles {
+			body = append(body, responses.GenerateLogResponse(&file, env))
+		}
+		json.NewEncoder(w).Encode(body)
 	}
 }
 
+// GetLogFile swagger:route GET /logFiles/{ID} logFile GetLogFile
+//
+// Handler to retrieve a single logFile
+//
+// This will return a single log
+//
+// Produces:
+//	application/json
+//
+// Responses:
+// 	200: LogFileResponse
 func GetLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
@@ -44,29 +70,16 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 	}
 }
 
-func CreateLogFile(env *utils.Env) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		body, _ := ioutil.ReadAll(r.Body)
-		has_note := false
-		if gjson.Get(string(body), "note").Exists() {
-			has_note = true
-			//create note
-		}
-		logFile := models.NewLogFile(
-			gjson.Get(string(body), "name").String(),
-			time.Now().Unix(),
-			has_note)
-		log.Print(logFile)
-		err := env.Db.Save(logFile)
-		if err != nil {
-			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
-		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added logFile without error")
-		}
-	}
-}
-
+// UpdateLogFile swagger:route PUT /logFiles/{ID} logFile UpdateLogFile
+//
+// Handler to update the logFile name
+//
+// This will allow updating of the log name
+//
+// Consumes:
+//	application/json
+// Responses:
+//	default: StatusResponse
 func UpdateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
@@ -99,6 +112,16 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 	}
 }
 
+// UpdateLogFile swagger:route DELETE /logFiles/{ID} logFile DeleteLogFile
+//
+// Handler to delete the logFile name
+//
+// This will delete a log file
+//
+// Consumes:
+//	application/json
+// Responses:
+//	default: StatusResponse
 func DeleteLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile

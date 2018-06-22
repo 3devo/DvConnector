@@ -11,6 +11,20 @@ import (
 	"github.com/tidwall/gjson"
 )
 
+// swagger:parameters GetAllLogFiles GetAllChars GetAllSheets GetAllNotes
+type QueryBuilderParams struct {
+	//[{"key": "ID", "value": 1}] Array of values you want to filter
+	Filter string `json:"filter"`
+	// How many results it should skip
+	Skip int `json:"skip"`
+	// Max results returned
+	Limit int `json:"limit"`
+	// "Name, Age" Order by
+	OrderBy []string `json:"orderBy"`
+	// Reverse Order by
+	Reverse bool `json:"reverse"`
+}
+
 // QueryBuilder is a method that generates storm query to give a more fine grain control over results
 // Some query string examples that can be used
 // filter example.com?format=[{key:value}]
