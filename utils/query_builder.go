@@ -11,7 +11,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// swagger:parameters GetAllLogFiles GetAllChars GetAllSheets GetAllNotes
+// swagger:parameters GetAllLogFiles GetAllCharts GetAllSheets GetAllWorkspaces
 type QueryBuilderParams struct {
 	//[{"key": "ID", "value": 1}] Array of values you want to filter
 	Filter string `json:"filter"`
