@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"strconv"
 
 	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/routing/responses"
@@ -15,7 +14,7 @@ import (
 	"github.com/tidwall/gjson"
 )
 
-// GetAllLogFiles swagger:route GET /logFiles logFile GetAllLogFiles
+// swagger:route GET /logFiles logFiles GetAllLogFiles
 //
 // Handler to retrieve all logFiles
 //
@@ -40,7 +39,7 @@ func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 	}
 }
 
-// GetLogFile swagger:route GET /logFiles/{ID} logFile GetLogFile
+// swagger:route GET /logFiles/{uuid} logFiles GetLogFile
 //
 // Handler to retrieve a single logFile
 //
@@ -54,12 +53,8 @@ func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 func GetLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
-		id, err := strconv.Atoi(ps.ByName("id"))
-		if err != nil {
-			http.Error(w, "id should be a number", http.StatusNotAcceptable)
-			return
-		}
-		err = env.Db.One("ID", id, &logFile)
+		uuid := ps.ByName("uuid")
+		err := env.Db.One("ID", uuid, &logFile)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -70,7 +65,7 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 	}
 }
 
-// UpdateLogFile swagger:route PUT /logFiles/{ID} logFile UpdateLogFile
+// swagger:route PUT /logFiles/{uuid} logFiles UpdateLogFile
 //
 // Handler to update the logFile name
 //
@@ -85,12 +80,8 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 		var logFile models.LogFile
 		body, _ := ioutil.ReadAll(r.Body)
 		bodyString := string(body)
-		id, err := strconv.Atoi(ps.ByName("id"))
-		if err != nil {
-			http.Error(w, "id should be a number", http.StatusNotAcceptable)
-			return
-		}
-		err = env.Db.One("ID", id, &logFile)
+		uuid := ps.ByName("uuid")
+		err := env.Db.One("UUID", uuid, &logFile)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -98,7 +89,7 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 		}
 
 		err = env.Db.Update(&models.LogFile{
-			ID:        id,
+			UUID:      uuid,
 			Name:      gjson.Get(bodyString, "name").String(),
 			Timestamp: gjson.Get(bodyString, "timestamp").Int(),
 			HasNote:   gjson.Get(bodyString, "hasNote").Bool(),
@@ -107,12 +98,12 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
 		} else {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Updated LogFile with ID %v without error", id)
+			fmt.Fprintf(w, "Updated LogFile with ID %v without error", uuid)
 		}
 	}
 }
 
-// UpdateLogFile swagger:route DELETE /logFiles/{ID} logFile DeleteLogFile
+// swagger:route DELETE /logFiles/{uuid} logFiles DeleteLogFile
 //
 // Handler to delete the logFile name
 //
@@ -125,12 +116,8 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 func DeleteLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
-		id, err := strconv.Atoi(ps.ByName("id"))
-		if err != nil {
-			http.Error(w, "id should be a number", http.StatusNotAcceptable)
-			return
-		}
-		err = env.Db.One("ID", id, &logFile)
+		uuid := ps.ByName("uuid")
+		err := env.Db.One("UUID", uuid, &logFile)
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
@@ -142,6 +129,6 @@ func DeleteLogFile(env *utils.Env) httprouter.Handle {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Removed LogFile with %v successfully", id)
+		fmt.Fprintf(w, "Removed LogFile with %v successfully", uuid)
 	}
 }

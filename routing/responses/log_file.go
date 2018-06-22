@@ -16,7 +16,7 @@ import (
 //
 // swagger:response LogFileResponse
 type LogFileResponse struct {
-	ID        int    `json:"id"`
+	UUID      string `json:"uuid"`
 	Name      string `json:"name"`
 	Timestamp int64  `json:"timestamp"`
 	Note      string `json:"note"`
@@ -36,7 +36,7 @@ func GenerateLogResponse(logFile *models.LogFile, env *utils.Env) *LogFileRespon
 	response := new(LogFileResponse)
 	response.Name = logFile.Name
 	response.Timestamp = logFile.Timestamp
-	response.ID = logFile.ID
+	response.UUID = logFile.UUID
 	logName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
 	logData, err := ioutil.ReadFile(fmt.Sprintf("./%v/%v", "logs", logName)) // just pass the file name
 	log.Println(logName)
