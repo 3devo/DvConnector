@@ -18,13 +18,13 @@ type SheetResponse struct {
 }
 
 // Parameters needed to create a sheet object
-// swagger:parameters CreateSheet
+// swagger:parameters CreateSheet UpdateSheet
 type SheetCreationParams struct {
 	//in:body
 	Body struct {
-		UUID   string `json:"uuid"`
-		Title  string `json:"title"`
-		Charts []int  `json:"charts"`
+		UUID   string   `json:"uuid"`
+		Title  string   `json:"title"`
+		Charts []string `json:"charts"`
 	}
 }
 

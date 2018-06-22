@@ -64,7 +64,7 @@ func GetWorkspace(env *utils.Env) httprouter.Handle {
 	}
 }
 
-// swagger:route POST /workspaces/ Workspaces CreateWorkspace
+// swagger:route POST /workspaces Workspaces CreateWorkspace
 //
 // Handler to create a new workspace object
 //
@@ -84,7 +84,7 @@ func CreateWorkspace(env *utils.Env) httprouter.Handle {
 		json.Unmarshal(body, &Workspace)
 		for _, sheetId := range Workspace.Sheets {
 			if env.Db.One("UUID", sheetId, &models.Sheet{}) != nil {
-				http.Error(w, fmt.Sprintf("Workspace with uuid %v doesn't exist", sheetId), http.StatusConflict)
+				http.Error(w, fmt.Sprintf("Sheet with uuid %v doesn't exist", sheetId), http.StatusConflict)
 				return
 			}
 		}
@@ -124,7 +124,7 @@ func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 		}
 		for _, sheetId := range Workspace.Sheets {
 			if env.Db.One("UUID", sheetId, &models.Sheet{}) != nil {
-				http.Error(w, fmt.Sprintf("Workspace with uuid %v doesn't exist", sheetId), http.StatusConflict)
+				http.Error(w, fmt.Sprintf("Sheet with uuid %v doesn't exist", sheetId), http.StatusConflict)
 				return
 			}
 		}

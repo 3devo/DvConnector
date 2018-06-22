@@ -22,9 +22,9 @@ type WorkspaceResponse struct {
 type WorkspaceCreationParams struct {
 	//in:body
 	Body struct {
-		UUID   string `json:"uuid"`
-		Title  string `json:"title"`
-		Sheets []int  `json:"sheets"`
+		UUID   string   `json:"uuid"`
+		Title  string   `json:"title"`
+		Sheets []string `json:"sheets"`
 	}
 }
 
