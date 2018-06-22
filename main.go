@@ -2,7 +2,7 @@
 // Version POC - FeConnector
 // Supports Windows, Linux, Mac, and Raspberry Pi, Beagle Bone Black
 
-//go:generate swagger generate spec -o swagger.json
+//go:generate swagger generate spec -m -o swagger.json
 
 // Package classification FeConnector API.
 //
@@ -136,10 +136,8 @@ func launchSelfLater() {
 }
 
 func main() {
-	os.MkdirAll("./workspaces", os.ModePerm)
-	os.MkdirAll("./charts", os.ModePerm)
 	os.MkdirAll("./logs", os.ModePerm)
-	os.MkdirAll("./sheets", os.ModePerm)
+	os.MkdirAll("./notes", os.ModePerm)
 	defer db.Close()
 	// Test USB list
 	//	GetUsbList()
@@ -273,31 +271,31 @@ func main() {
 
 	/**	LOG FILE ROUTING */
 	router.GET(restUrl+"logFiles", routing.GetAllLogFiles(env))
-	router.GET(restUrl+"logFiles/:id", routing.GetLogFile(env))
+	router.GET(restUrl+"logFiles/:uuid", routing.GetLogFile(env))
 	// router.POST(restUrl+"logFiles", routing.CreateLogFile(env)) /** log files get created by the system */
-	router.DELETE(restUrl+"logFiles/:id", routing.DeleteLogFile(env))
-	router.PUT(restUrl+"logFiles/:id", routing.UpdateLogFile(env))
+	router.DELETE(restUrl+"logFiles/:uuid", routing.DeleteLogFile(env))
+	router.PUT(restUrl+"logFiles/:uuid", routing.UpdateLogFile(env))
 
 	/**	CHART ROUTING */
 	router.GET(restUrl+"charts", routing.GetAllCharts(env))
-	router.GET(restUrl+"charts/:id", routing.GetChart(env))
+	router.GET(restUrl+"charts/:uuid", routing.GetChart(env))
 	router.POST(restUrl+"charts", routing.CreateChart(env))
-	router.DELETE(restUrl+"charts/:id", routing.DeleteChart(env))
-	router.PUT(restUrl+"charts/:id", routing.UpdateChart(env))
+	router.DELETE(restUrl+"charts/:uuid", routing.DeleteChart(env))
+	router.PUT(restUrl+"charts/:uuid", routing.UpdateChart(env))
 
 	/**	SHEET ROUTING */
 	router.GET(restUrl+"sheets", routing.GetAllSheets(env))
-	router.GET(restUrl+"sheets/:id", routing.GetSheet(env))
+	router.GET(restUrl+"sheets/:uuid", routing.GetSheet(env))
 	router.POST(restUrl+"sheets", routing.CreateSheet(env))
-	router.DELETE(restUrl+"sheets/:id", routing.DeleteSheet(env))
-	router.PUT(restUrl+"sheets/:id", routing.UpdateSheet(env))
+	router.DELETE(restUrl+"sheets/:uuid", routing.DeleteSheet(env))
+	router.PUT(restUrl+"sheets/:uuid", routing.UpdateSheet(env))
 
 	/**	WORKSPACE ROUTING */
 	router.GET(restUrl+"workspaces", routing.GetAllWorkspaces(env))
-	router.GET(restUrl+"workspaces/:id", routing.GetWorkspace(env))
+	router.GET(restUrl+"workspaces/:uuid", routing.GetWorkspace(env))
 	router.POST(restUrl+"workspaces", routing.CreateWorkspace(env))
-	router.DELETE(restUrl+"workspaces/:id", routing.DeleteWorkspace(env))
-	router.PUT(restUrl+"workspaces/:id", routing.UpdateWorkspace(env))
+	router.DELETE(restUrl+"workspaces/:uuid", routing.DeleteWorkspace(env))
+	router.PUT(restUrl+"workspaces/:uuid", routing.UpdateWorkspace(env))
 
 	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")

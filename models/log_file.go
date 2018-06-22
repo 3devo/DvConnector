@@ -4,7 +4,7 @@ package models
 //
 // This is used to save a logFile in the boltdb
 type LogFile struct {
-	ID        int    `storm:"id,increment"`
+	UUID      string `storm:"id" json:"uuid"`
 	Name      string `json:"name"`
 	Timestamp int64  `json:"timestamp"`
 	HasNote   bool   `json:"hasNote"`

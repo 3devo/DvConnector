@@ -19,8 +19,9 @@ type Ruler struct {
 	Color string `json:"color"`
 }
 
+// swagger:model Chart
 type Chart struct {
-	ID                  int                   `storm:"id,increment"`
+	UUID                string                `storm:"id" json:"uuid"`
 	Title               string                `json:"title"`
 	PlotDataInformation []PlotDataInformation `json:"plotDataInformation"`
 	Axes                []Axis                `json:"axes"`
