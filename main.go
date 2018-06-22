@@ -1,6 +1,42 @@
-// Version 1.95
+// Version 1.95 - serial port json server
+// Version POC - FeConnector
 // Supports Windows, Linux, Mac, and Raspberry Pi, Beagle Bone Black
 
+//go:generate swagger generate spec -o swagger.json
+
+// Package classification FeConnector API.
+//
+// the purpose of this application is to provide an application
+// that is using plain go code to define an API
+//
+// This should demonstrate all the possible comment annotations
+// that are available to turn go code into a fully compliant swagger 2.0 spec
+//
+// Terms Of Service:
+//
+// there are no TOS at this moment, use at your own risk we take no responsibility
+//
+//     Schemes: http, https
+//     Host: localhost:8989
+//     BasePath: /api/v0.1.0
+//     Version: 0.1.0
+//     Contact: 3Devo<bobthomas@devo.com> http://3devo.com
+//
+//     Consumes:
+//     - application/json
+//
+//     Produces:
+//     - application/json
+//
+//     Security:
+//     - api_key:
+//
+//     SecurityDefinitions:
+//     api_key:
+//          type: apiKey
+//          name: KEY
+//          in: header
+// swagger:meta
 package main
 
 import (
@@ -238,7 +274,7 @@ func main() {
 	/**	LOG FILE ROUTING */
 	router.GET(restUrl+"logFiles", routing.GetAllLogFiles(env))
 	router.GET(restUrl+"logFiles/:id", routing.GetLogFile(env))
-	router.POST(restUrl+"logFiles", routing.CreateLogFile(env))
+	// router.POST(restUrl+"logFiles", routing.CreateLogFile(env)) /** log files get created by the system */
 	router.DELETE(restUrl+"logFiles/:id", routing.DeleteLogFile(env))
 	router.PUT(restUrl+"logFiles/:id", routing.UpdateLogFile(env))
 
