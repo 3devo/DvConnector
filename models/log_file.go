@@ -1,5 +1,8 @@
 package models
 
+// A logFile database model
+//
+// This is used to save a logFile in the boltdb
 type LogFile struct {
 	ID        int    `storm:"id,increment"`
 	Name      string `json:"name"`
