@@ -62,6 +62,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/rs/cors"
 	"github.com/skratchdot/open-golang/open"
+	validator "gopkg.in/go-playground/validator.v9"
 )
 
 var (
@@ -107,7 +108,8 @@ var (
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
-	db, _ = storm.Open("feconnector.db")
+	db, _    = storm.Open("feconnector.db")
+	validate = validator.New()
 
 	ErrFileConflict = errors.New("File already exists")
 	ErrFileInternal = errors.New("Internal")
@@ -141,6 +143,13 @@ func main() {
 	db.Init(&models.Chart{})
 	db.Init(&models.LogFile{})
 	defer db.Close()
+
+	/** Custom validators **/
+	validate.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
+		return utils.IsValidUUID(fl.Field().String())
+	})
+
+	env := &utils.Env{Db: db, Validator: validate}
 	// Test USB list
 	//	GetUsbList()
 
@@ -266,7 +275,6 @@ func main() {
 	//gpio.PreInit()
 	// when the app exits, clean up our gpio ports
 	//defer gpio.CleanupGpio()
-	env := &utils.Env{Db: db}
 	router := httprouter.New()
 	restUrl := fmt.Sprintf("/api/v%v/", string(version))
 	router.GET("/ws", wsHandler)
