@@ -58,6 +58,7 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/routing"
 	"github.com/3devo/feconnector/utils"
 	"github.com/asdine/storm"
@@ -138,6 +139,10 @@ func launchSelfLater() {
 func main() {
 	os.MkdirAll("./logs", os.ModePerm)
 	os.MkdirAll("./notes", os.ModePerm)
+	db.Init(&models.Workspace{})
+	db.Init(&models.Sheet{})
+	db.Init(&models.Chart{})
+	db.Init(&models.LogFile{})
 	defer db.Close()
 	// Test USB list
 	//	GetUsbList()
