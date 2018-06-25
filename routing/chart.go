@@ -7,6 +7,9 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/3devo/feconnector/routing/responses"
+	"github.com/tidwall/gjson"
+
 	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/utils"
 	"github.com/julienschmidt/httprouter"
@@ -49,6 +52,10 @@ func GetChart(env *utils.Env) httprouter.Handle {
 		err := env.Db.One("UUID", uuid, &Chart)
 		if err != nil {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteStatusResponse(
+				http.StatusNotFound,
+				fmt.Sprintf("Chart with uuid : %v has not been found", uuid),
+				w)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -67,15 +74,34 @@ func GetChart(env *utils.Env) httprouter.Handle {
 //	200: StatusResponse
 func CreateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var chart models.Chart
+		var validation responses.ChartCreationParam
 		body, _ := ioutil.ReadAll(r.Body)
-		err := json.Unmarshal(body, &chart)
-		err = env.Db.Save(&chart)
+		data := gjson.Parse(string(body))
+
+		json.Unmarshal(body, &validation.Data)
+		err := env.Validator.Struct(validation)
+		if err != nil {
+			responses.WriteStatusResponse(
+				http.StatusInternalServerError,
+				fmt.Sprintf("Chart with uuid %v failed to create with error [%v]", data.Get("uuid").String(), err),
+				w)
+			return
+		}
+		if env.Db.One("UUID", data.Get("uuid").String(), &models.Chart{}) == nil {
+			responses.WriteStatusResponse(
+				http.StatusInternalServerError,
+				fmt.Sprintf("Chart with uuid: %v failed to create with error [UUID already exists]", data.Get("uuid").String()),
+				w)
+			return
+		}
+
+		err = env.Db.Save(&validation.Data)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusConflict)
+			return
 		} else {
 			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added chart %v without error", chart.UUID)
+			fmt.Fprintf(w, "Added chart %v without error", validation.Data.UUID)
 		}
 	}
 }

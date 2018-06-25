@@ -21,8 +21,8 @@ type Ruler struct {
 
 // swagger:model Chart
 type Chart struct {
-	UUID                string                `storm:"id" json:"uuid"`
-	Title               string                `json:"title"`
+	UUID                string                `storm:"id" json:"uuid" validate:"uuid"`
+	Title               string                `json:"title" validate:"required"`
 	PlotDataInformation []PlotDataInformation `json:"plotDataInformation"`
 	Axes                []Axis                `json:"axes"`
 	HorizontalRulers    []Ruler               `json:"horizontalRulers"`
