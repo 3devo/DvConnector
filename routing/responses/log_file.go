@@ -25,10 +25,12 @@ type LogFileResponse struct {
 
 // A LogFileUpdate body model
 // This is used to validate the update request
-// swagger:parameters UpdateLogFile
+// swagger:parameters UpdateLogFile CreateLogFile
 type LogFileUpdateBody struct {
 	// required
+	UUID string `json:"uuid"`
 	Name string `json:"name"`
+	Note string `json:"note"`
 }
 
 // GenerateLogResponse returns a new LogFileResponse filled with the actual note and log data

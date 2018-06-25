@@ -50,18 +50,68 @@ func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 //
 // Responses:
 // 	200: LogFileResponse
+//	404: StatusResponse
 func GetLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("ID", uuid, &logFile)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteStatusResponse(
+				http.StatusNotFound,
+				fmt.Sprintf("LogFile with uuid:%v not found", uuid),
+				w)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(logFile)
+	}
+}
+
+//swagger:route POST /logFiles logFiles CreateLogFile
+//
+// Handler to create a new log file
+//
+// This method will create a new log file in the database
+// and create new physical files in the logs, notes directory.
+//
+// Produces:
+// 	application/json
+//
+// Consumes:
+// 	application/json
+//
+// Responses:
+//	default: StatusResponse
+
+func CreateLogFile(env *utils.Env) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		body, _ := ioutil.ReadAll(r.Body)
+		bodyString := string(body)
+		//validation
+		if env.Db.One("UUID", gjson.Get(bodyString, "uuid").String(), &models.LogFile{}) == nil {
+			responses.WriteStatusResponse(
+				http.StatusInternalServerError,
+				fmt.Sprintf("Log with uuid: %v failed to create with error [UUID already exists]", gjson.Get(bodyString, "uuid").String()),
+				w)
+			return
+		}
+		logFile, _ := models.CreateLogFile(
+			gjson.Get(bodyString, "uuid").String(),
+			gjson.Get(bodyString, "name").String(),
+			gjson.Get(bodyString, "note").String())
+		err := env.Db.Save(logFile)
+		if err != nil {
+			responses.WriteStatusResponse(
+				http.StatusInternalServerError,
+				fmt.Sprintf("Log with uuid: %v failed to create with error [%v]", logFile.UUID, err.Error()),
+				w)
+			return
+		}
+		responses.WriteStatusResponse(
+			http.StatusOK,
+			fmt.Sprintf("Log with uuid: %v has been successfully created", logFile.UUID),
+			w)
 	}
 }
 
@@ -83,22 +133,26 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &logFile)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteStatusResponse(
+				http.StatusNotFound,
+				fmt.Sprintf("LogFile with uuid:%v not found", gjson.Get(bodyString, "uuid").String()),
+				w)
 			return
 		}
-
-		err = env.Db.Update(&models.LogFile{
-			UUID:      uuid,
-			Name:      gjson.Get(bodyString, "name").String(),
-			Timestamp: gjson.Get(bodyString, "timestamp").Int(),
-			HasNote:   gjson.Get(bodyString, "hasNote").Bool(),
-		})
+		logFile.UpdateLogFile(
+			gjson.Get(bodyString, "name").String(),
+			gjson.Get(bodyString, "note").String())
+		err = env.Db.Update(&logFile)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+			responses.WriteStatusResponse(
+				http.StatusConflict,
+				fmt.Sprintf("Failed to update log with error [%v]", err.Error()),
+				w)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Updated LogFile with ID %v without error", uuid)
+			responses.WriteStatusResponse(
+				http.StatusOK,
+				fmt.Sprintf("Updated LogFile with ID %v without error", uuid),
+				w)
 		}
 	}
 }
@@ -123,12 +177,17 @@ func DeleteLogFile(env *utils.Env) httprouter.Handle {
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		err = env.Db.DeleteStruct(&logFile)
+		err = logFile.DeleteLogFile(env)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			responses.WriteStatusResponse(
+				http.StatusConflict,
+				fmt.Sprintf("Log with uuid: %v failed to create with error [%v]", logFile.UUID, err.Error()),
+				w)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Removed LogFile with %v successfully", uuid)
+		responses.WriteStatusResponse(
+			http.StatusOK,
+			fmt.Sprintf("Log with uuid: %v has been successfully deleted", logFile.UUID),
+			w)
 	}
 }
