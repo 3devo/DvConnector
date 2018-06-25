@@ -40,13 +40,10 @@
 package main
 
 import (
-	"encoding/json"
 	"flag"
 	"go/build"
-	"io/ioutil"
 	"log"
 	"net/http"
-	"strings"
 	//"path/filepath"
 	"errors"
 	"fmt"
@@ -324,96 +321,6 @@ func main() {
 	setupSysTray()
 	ch := make(chan bool)
 	<-ch
-}
-
-type LogFile struct {
-	Name    string `json:"name"`
-	ModDate string `json:"modDate"`
-	Size    int64  `json:"size"`
-}
-
-func listLogsHandler(w http.ResponseWriter, r *http.Request, _ httprouter.Params) {
-	files, err := ioutil.ReadDir("./logs/")
-	if err != nil {
-		fmt.Fprint(w, "[]")
-	}
-	logfiles := make([]LogFile, 0, len(files))
-	for _, f := range files {
-		logfiles = append(logfiles, LogFile{Name: f.Name(), ModDate: f.ModTime().Format("2006-01-02 15:04:05"), Size: f.Size()})
-	}
-	data, err := json.Marshal(logfiles)
-	fmt.Fprint(w, string(data))
-}
-
-func listResource(w http.ResponseWriter, r *http.Request, param httprouter.Params) {
-	if param.ByName("type") == "logs" {
-		listLogsHandler(w, r, param)
-	} else {
-		files, err := ioutil.ReadDir("./" + param.ByName("type") + "/")
-		if err != nil {
-			fmt.Fprint(w, "[]")
-		}
-		type buffer map[string]interface{}
-		resource := make([]buffer, 0, len(files))
-		for _, f := range files {
-			b, err := ioutil.ReadFile("./" + param.ByName("type") + "/" + f.Name()) // just pass the file name
-			var dummy map[string]interface{}
-			json.Unmarshal(b, &dummy)
-			if err != nil {
-				fmt.Print(err)
-			}
-			resource = append(resource, dummy)
-		}
-		data, err := json.Marshal(resource)
-		fmt.Fprint(w, string(data))
-	}
-
-}
-
-func updateResource(folder string, name string, data string) error {
-	if _, err := os.Stat("./" + folder + "/" + name + map[bool]string{true: ".json", false: ""}[folder != "logs"]); os.IsNotExist(err) {
-		return ErrFileNotFound
-	} else {
-		err := ioutil.WriteFile("./"+folder+"/"+name+map[bool]string{true: ".json", false: ""}[folder != "logs"], []byte(data), 0777)
-		if err != nil {
-			return ErrFileInternal
-		}
-	}
-	return nil
-}
-
-func saveResource(folder string, name string, data string) error {
-	if _, err := os.Stat("./" + folder + "/" + name + map[bool]string{true: ".json", false: ""}[folder != "logs"]); err == nil {
-		return ErrFileNotFound
-	} else {
-		f, err := os.Create("./" + folder + "/" + name + map[bool]string{true: ".json", false: ""}[folder != "logs"])
-		if err != nil {
-			return ErrFileInternal
-		}
-		f.WriteString(string(data))
-		f.Close()
-	}
-	return nil
-}
-
-func bulkDelete(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-	// delete file
-	q := r.URL.Query()
-	items := strings.Split(q.Get("items"), ",")
-	// Bulk add
-	if len(items) > 0 {
-		for _, id := range items {
-			log.Println(id)
-			err := os.Remove("./" + ps.ByName("type") + "/" + id + map[bool]string{true: ".json", false: ""}[ps.ByName("type") != "logs"])
-			if err != nil {
-				http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			}
-		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Added bulk %s without error", ps.ByName("type"))
-	} else {
-		http.Error(w, http.StatusText(http.StatusNotImplemented), http.StatusNotImplemented)
-	}
 }
 
 func startHttp(ip string, h http.Handler) {
