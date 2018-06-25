@@ -12,7 +12,7 @@ import (
 //
 // This is used to save a logFile in the boltdb
 type LogFile struct {
-	UUID      string `storm:"id" json:"uuid"`
+	UUID      string `storm:"id" json:"uuid" validate:"uuid"`
 	Name      string `json:"name"`
 	Timestamp int64  `json:"timestamp"`
 	HasNote   bool   `json:"hasNote"`

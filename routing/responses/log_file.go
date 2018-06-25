@@ -27,10 +27,13 @@ type LogFileResponse struct {
 // This is used to validate the update request
 // swagger:parameters UpdateLogFile CreateLogFile
 type LogFileUpdateBody struct {
-	// required
-	UUID string `json:"uuid"`
-	Name string `json:"name"`
-	Note string `json:"note"`
+	// in:body
+	Data struct {
+		// required
+		UUID string `json:"uuid" validate:"uuid"`
+		Name string `json:"name" validate:"required"`
+		Note string `json:"note"`
+	} `json:"data"`
 }
 
 // GenerateLogResponse returns a new LogFileResponse filled with the actual note and log data

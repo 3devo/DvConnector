@@ -83,24 +83,34 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 //
 // Responses:
 //	default: StatusResponse
-
 func CreateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		var validateModel responses.LogFileUpdateBody
 		body, _ := ioutil.ReadAll(r.Body)
-		bodyString := string(body)
+		data := gjson.Get(string(body), "data")
 		//validation
-		if env.Db.One("UUID", gjson.Get(bodyString, "uuid").String(), &models.LogFile{}) == nil {
+		json.Unmarshal([]byte(data.String()), &validateModel)
+		err := env.Validator.Struct(validateModel)
+		if err != nil {
 			responses.WriteStatusResponse(
 				http.StatusInternalServerError,
-				fmt.Sprintf("Log with uuid: %v failed to create with error [UUID already exists]", gjson.Get(bodyString, "uuid").String()),
+				fmt.Sprintf("Log with uuid %v failed to create with error [%v]", data.Get("uuid").String(), err),
+				w)
+			return
+		}
+
+		if env.Db.One("UUID", data.Get("uuid").String(), &models.LogFile{}) == nil {
+			responses.WriteStatusResponse(
+				http.StatusInternalServerError,
+				fmt.Sprintf("Log with uuid: %v failed to create with error [UUID already exists]", data.Get("uuid").String()),
 				w)
 			return
 		}
 		logFile, _ := models.CreateLogFile(
-			gjson.Get(bodyString, "uuid").String(),
-			gjson.Get(bodyString, "name").String(),
-			gjson.Get(bodyString, "note").String())
-		err := env.Db.Save(logFile)
+			data.Get("uuid").String(),
+			data.Get("name").String(),
+			data.Get("note").String())
+		err = env.Db.Save(logFile)
 		if err != nil {
 			responses.WriteStatusResponse(
 				http.StatusInternalServerError,
@@ -127,21 +137,32 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 //	default: StatusResponse
 func UpdateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		var validateModel responses.LogFileUpdateBody
 		var logFile models.LogFile
 		body, _ := ioutil.ReadAll(r.Body)
-		bodyString := string(body)
+		data := gjson.Get(string(body), "data")
+		//validation
+		json.Unmarshal(body, &validateModel)
+		err := env.Validator.Struct(validateModel)
+		if err != nil {
+			responses.WriteStatusResponse(
+				http.StatusInternalServerError,
+				fmt.Sprintf("Log with uuid %v failed to create with error [%v]", data.Get("uuid").String(), err),
+				w)
+			return
+		}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &logFile)
+		err = env.Db.One("UUID", uuid, &logFile)
 		if err != nil {
 			responses.WriteStatusResponse(
 				http.StatusNotFound,
-				fmt.Sprintf("LogFile with uuid:%v not found", gjson.Get(bodyString, "uuid").String()),
+				fmt.Sprintf("LogFile with uuid:%v not found", data.Get("uuid").String()),
 				w)
 			return
 		}
 		logFile.UpdateLogFile(
-			gjson.Get(bodyString, "name").String(),
-			gjson.Get(bodyString, "note").String())
+			data.Get("name").String(),
+			data.Get("note").String())
 		err = env.Db.Update(&logFile)
 		if err != nil {
 			responses.WriteStatusResponse(
