@@ -87,9 +87,9 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var validateModel responses.LogFileUpdateBody
 		body, _ := ioutil.ReadAll(r.Body)
-		data := gjson.Get(string(body), "data")
+		data := gjson.Parse(string(body))
 		//validation
-		json.Unmarshal([]byte(data.String()), &validateModel)
+		json.Unmarshal([]byte(data.String()), &validateModel.Data)
 		err := env.Validator.Struct(validateModel)
 		if err != nil {
 			responses.WriteStatusResponse(
@@ -140,9 +140,9 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 		var validateModel responses.LogFileUpdateBody
 		var logFile models.LogFile
 		body, _ := ioutil.ReadAll(r.Body)
-		data := gjson.Get(string(body), "data")
+		data := gjson.Parse(string(body))
 		//validation
-		json.Unmarshal(body, &validateModel)
+		json.Unmarshal(body, &validateModel.Data)
 		err := env.Validator.Struct(validateModel)
 		if err != nil {
 			responses.WriteStatusResponse(
