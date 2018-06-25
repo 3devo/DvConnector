@@ -272,7 +272,7 @@ func main() {
 	/**	LOG FILE ROUTING */
 	router.GET(restUrl+"logFiles", routing.GetAllLogFiles(env))
 	router.GET(restUrl+"logFiles/:uuid", routing.GetLogFile(env))
-	// router.POST(restUrl+"logFiles", routing.CreateLogFile(env)) /** log files get created by the system */
+	router.POST(restUrl+"logFiles", routing.CreateLogFile(env))
 	router.DELETE(restUrl+"logFiles/:uuid", routing.DeleteLogFile(env))
 	router.PUT(restUrl+"logFiles/:uuid", routing.UpdateLogFile(env))
 
