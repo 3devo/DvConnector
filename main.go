@@ -152,8 +152,17 @@ func main() {
 	})
 
 	validate.RegisterValidation("chart-exists", func(fl validator.FieldLevel) bool {
-		var test models.Chart
-		err := db.One("UUID", fl.Field().String(), &test)
+		var chart models.Chart
+		err := db.One("UUID", fl.Field().String(), &chart)
+		if err != nil {
+			return false
+		}
+		return true
+	})
+
+	validate.RegisterValidation("sheet-exists", func(fl validator.FieldLevel) bool {
+		var sheet models.Sheet
+		err := db.One("UUID", fl.Field().String(), &sheet)
 		if err != nil {
 			return false
 		}
