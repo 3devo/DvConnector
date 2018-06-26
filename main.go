@@ -151,6 +151,15 @@ func main() {
 		return utils.IsValidUUID(fl.Field().String())
 	})
 
+	validate.RegisterValidation("chart-exists", func(fl validator.FieldLevel) bool {
+		var test models.Chart
+		err := db.One("UUID", fl.Field().String(), &test)
+		if err != nil {
+			return false
+		}
+		return true
+	})
+
 	env := &utils.Env{Db: db, Validator: validate}
 	// Test USB list
 	//	GetUsbList()
