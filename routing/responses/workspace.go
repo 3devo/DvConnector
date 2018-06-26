@@ -21,11 +21,7 @@ type WorkspaceResponse struct {
 // swagger:parameters CreateWorkspace UpdateWorkspace
 type WorkspaceCreationParams struct {
 	//in:body
-	Body struct {
-		UUID   string   `json:"uuid"`
-		Title  string   `json:"title"`
-		Sheets []string `json:"sheets"`
-	}
+	Data models.Workspace
 }
 
 // GenerateWorkSpaceResponse returns a WorkSpaceResponse object filled with actual sheet and chart data instead of id
