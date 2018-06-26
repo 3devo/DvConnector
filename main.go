@@ -60,8 +60,10 @@ import (
 	"github.com/3devo/feconnector/utils"
 	"github.com/asdine/storm"
 	"github.com/julienschmidt/httprouter"
+	negronilogrus "github.com/meatballhat/negroni-logrus"
 	"github.com/rs/cors"
 	"github.com/skratchdot/open-golang/open"
+	"github.com/urfave/negroni"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
@@ -310,22 +312,13 @@ func main() {
 	router.NotFound = http.FileServer(http.Dir(*directory))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
-	handler := cors.AllowAll().Handler(router)
-	// if err := http.ListenAndServe(*addr, handler); err != nil {
-	// 	fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
-	// 	fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
-	// 	log.Fatal("Error ListenAndServe:", err)
-	// }
+	negroniMiddleware := negroni.New()
+	// n.Use(negroni.NewRecovery())
+	negroniMiddleware.Use(negronilogrus.NewMiddleware())
+	negroniMiddleware.Use(cors.AllowAll())
+	negroniMiddleware.UseHandler(router)
 
-	// log.Println("The Serial Port JSON Server is now running.")
-
-	// turn off logging output unless user wanted verbose mode
-	// actually, this is now done after the serial port list thread completes
-	if !*verbose {
-		//		log.SetOutput(new(NullWriter)) //route all logging to nullwriter
-	}
-	// wait
-	go startHttp(ip, handler)
+	go startHttp(ip, negroniMiddleware)
 	setupSysTray()
 	ch := make(chan bool)
 	<-ch
@@ -336,7 +329,6 @@ func startHttp(ip string, h http.Handler) {
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
 	if err := http.ListenAndServe(*addr, h); err != nil {
 		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
-		fmt.Printf("This can sometimes mean you are already running SPJS and accidentally trying to run a second time, thus why the port would be in use. Also, check your permissions/credentials to make sure you can bind to IP address ports.")
 		log.Fatal("Error ListenAndServe:", err)
 	}
 }
