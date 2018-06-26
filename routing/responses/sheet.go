@@ -21,11 +21,7 @@ type SheetResponse struct {
 // swagger:parameters CreateSheet UpdateSheet
 type SheetCreationParams struct {
 	//in:body
-	Body struct {
-		UUID   string   `json:"uuid"`
-		Title  string   `json:"title"`
-		Charts []string `json:"charts"`
-	}
+	Data models.Sheet `json:"data"`
 }
 
 // GenerateSheetResponseObject returns a SheetResponse object filled with actual chart data instead of id

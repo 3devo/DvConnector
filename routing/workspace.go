@@ -2,7 +2,6 @@ package routing
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -55,8 +54,12 @@ func GetWorkspace(env *utils.Env) httprouter.Handle {
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &workspace)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Workspaces",
+				"GET",
+				err.Error(),
+				w)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -75,25 +78,37 @@ func GetWorkspace(env *utils.Env) httprouter.Handle {
 //	application/json
 //
 // Responses:
-//        200: StatusResponse
+//        200: ResourceStatusResponse
 func CreateWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var Workspace models.Workspace
+		var validation responses.WorkspaceCreationParams
 		body, _ := ioutil.ReadAll(r.Body)
-
-		json.Unmarshal(body, &Workspace)
-		for _, sheetId := range Workspace.Sheets {
-			if env.Db.One("UUID", sheetId, &models.Sheet{}) != nil {
-				http.Error(w, fmt.Sprintf("Sheet with uuid %v doesn't exist", sheetId), http.StatusConflict)
-				return
-			}
-		}
-		err := env.Db.Save(&Workspace)
+		json.Unmarshal(body, &validation.Data)
+		err := env.Validator.Struct(validation)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Workspaces",
+				"CREATE",
+				err.Error(),
+				w)
+			return
+		}
+		err = env.Db.Save(&validation.Data)
+		if err != nil {
+			responses.WriteResourceStatusResponse(
+				http.StatusConflict,
+				"Workspaces",
+				"CREATE",
+				err.Error(),
+				w)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added Workspace without error")
+			responses.WriteResourceStatusResponse(
+				http.StatusOK,
+				"Workspaces",
+				"CREATE",
+				"",
+				w)
 		}
 	}
 }
@@ -109,31 +124,45 @@ func CreateWorkspace(env *utils.Env) httprouter.Handle {
 //	application/json
 //
 // Responses:
-//        200: StatusResponse
+//        200: ResourceStatusResponse
 func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var Workspace models.Workspace
+		var validation responses.WorkspaceCreationParams
 		body, _ := ioutil.ReadAll(r.Body)
 		uuid := ps.ByName("uuid")
-		json.Unmarshal(body, &Workspace)
-		err := env.Db.One("UUID", uuid, &models.Workspace{})
+		json.Unmarshal(body, &validation.Data)
+		err := env.Validator.Struct(validation)
+		if err != nil {
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Workspaces",
+				"UPDATE",
+				err.Error(),
+				w)
+			return
+		}
+		err = env.Db.One("UUID", uuid, &models.Sheet{})
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		for _, sheetId := range Workspace.Sheets {
-			if env.Db.One("UUID", sheetId, &models.Sheet{}) != nil {
-				http.Error(w, fmt.Sprintf("Sheet with uuid %v doesn't exist", sheetId), http.StatusConflict)
-				return
-			}
-		}
-		err = env.Db.Update(&Workspace)
+		err = env.Db.Update(&validation.Data)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+			responses.WriteResourceStatusResponse(
+				http.StatusConflict,
+				"Workspaces",
+				"UPDATE",
+				err.Error(),
+				w)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Updated Workspace with ID %v without error", uuid)
+			responses.WriteResourceStatusResponse(
+				http.StatusOK,
+				"Workspaces",
+				"UPDATE",
+				"",
+				w)
+			return
 		}
 	}
 }
@@ -148,23 +177,36 @@ func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 //	application/json
 //
 // Responses:
-//        200: StatusResponse
+//        200: ResourceStatusResponse
 func DeleteWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var Workspace models.Workspace
+		var workspace models.Sheet
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &Workspace)
+		err := env.Db.One("UUID", uuid, &workspace)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Workspaces",
+				"DELETE",
+				err.Error(),
+				w)
 			return
 		}
-		err = env.Db.DeleteStruct(&Workspace)
+		err = env.Db.DeleteStruct(&workspace)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Workspaces",
+				"DELETE",
+				err.Error(),
+				w)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Removed Workspace with %v successfully", uuid)
+		responses.WriteResourceStatusResponse(
+			http.StatusOK,
+			"Workspaces",
+			"DELETE",
+			"",
+			w)
 	}
 }

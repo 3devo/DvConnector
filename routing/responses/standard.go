@@ -8,13 +8,14 @@ import (
 // A  error or success response model
 // This is used to indicate errors or success messages
 //
-// {body:{code:200, message:"log has been added successfully"}}
-// swagger:response StatusResponse
-type StatusResponse struct {
+// swagger:response ResourceStatusResponse
+type ResourceStatusResponse struct {
 	// in: body
 	Body struct {
-		Code    int32  `json:"code"`
-		Message string `json:"message"`
+		Code     int32  `json:"code"`
+		Resource string `json:"resource"`
+		Action   string `json:"action"`
+		Error    string `json:"error"`
 	} `json:"body"`
 }
 
@@ -24,10 +25,11 @@ type UidPathParam struct {
 	UUID string `json:"uuid"`
 }
 
-func WriteStatusResponse(code int32, message string, w http.ResponseWriter) {
-	var response StatusResponse
+func WriteResourceStatusResponse(code int32, resource string, action string, err string, w http.ResponseWriter) {
+	var response ResourceStatusResponse
 	response.Body.Code = code
-	response.Body.Message = message
-	w.WriteHeader(int(code))
-	json.NewEncoder(w).Encode(response)
+	response.Body.Resource = resource
+	response.Body.Action = action
+	response.Body.Error = err
+	json.NewEncoder(w).Encode(response.Body)
 }

@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/3devo/feconnector/routing/responses"
@@ -51,10 +50,11 @@ func GetChart(env *utils.Env) httprouter.Handle {
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &Chart)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
-				fmt.Sprintf("Chart with uuid : %v has not been found", uuid),
+				"Charts",
+				"GET",
+				err.Error(),
 				w)
 			return
 		}
@@ -71,7 +71,7 @@ func GetChart(env *utils.Env) httprouter.Handle {
 // Produces:
 // 	application/json
 // Responses:
-//	200: StatusResponse
+//	200: ResourceStatusResponse
 func CreateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var validation responses.ChartCreationParam
@@ -81,23 +81,32 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 		json.Unmarshal(body, &validation.Data)
 		err := env.Validator.Struct(validation)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
-				fmt.Sprintf("Chart with uuid %v failed to create with error [%v]", data.Get("uuid").String(), err),
+				"Charts",
+				"CREATE",
+				err.Error(),
 				w)
 			return
 		}
 		if env.Db.One("UUID", data.Get("uuid").String(), &models.Chart{}) == nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
-				fmt.Sprintf("Chart with uuid: %v failed to create with error [UUID already exists]", data.Get("uuid").String()),
+				"Charts",
+				"CREATE",
+				err.Error(),
 				w)
 			return
 		}
 
 		err = env.Db.Save(&validation.Data)
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusConflict)
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Charts",
+				"CREATE",
+				err.Error(),
+				w)
 			return
 		} else {
 			w.WriteHeader(http.StatusOK)
@@ -114,7 +123,7 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 // Produces:
 // 	application/json
 // Responses:
-//	200: StatusResponse
+//	200: ResourceStatusResponse
 func UpdateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var chart models.Chart
@@ -124,14 +133,23 @@ func UpdateChart(env *utils.Env) httprouter.Handle {
 		json.Unmarshal(body, &chart)
 		err := env.Db.One("UUID", uuid, &models.Chart{})
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Charts",
+				"UPDATE",
+				err.Error(),
+				w)
 			return
 		}
 
 		err = env.Db.Update(&chart)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+			responses.WriteResourceStatusResponse(
+				http.StatusConflict,
+				"Charts",
+				"UPDATE",
+				err.Error(),
+				w)
 		} else {
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, "Updated Chart with ID %v without error", uuid)
@@ -147,20 +165,29 @@ func UpdateChart(env *utils.Env) httprouter.Handle {
 // Produces:
 // 	application/json
 // Responses:
-//	200: StatusResponse
+//	200: ResourceStatusResponse
 func DeleteChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var Chart models.Chart
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &Chart)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Charts",
+				"DELETE",
+				err.Error(),
+				w)
 			return
 		}
 		err = env.Db.DeleteStruct(&Chart)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Charts",
+				"DELETE",
+				err.Error(),
+				w)
 			return
 		}
 		w.WriteHeader(http.StatusOK)

@@ -2,7 +2,6 @@ package routing
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -55,8 +54,12 @@ func GetSheet(env *utils.Env) httprouter.Handle {
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &sheet)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Sheets",
+				"GET",
+				err.Error(),
+				w)
 			return
 		}
 		w.WriteHeader(http.StatusOK)
@@ -75,26 +78,37 @@ func GetSheet(env *utils.Env) httprouter.Handle {
 //	application/json
 //
 // Responses:
-//        200: StatusResponse
+//        200: ResourceStatusResponse
 func CreateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var sheet models.Sheet
+		var validation responses.SheetCreationParams
 		body, _ := ioutil.ReadAll(r.Body)
-
-		json.Unmarshal(body, &sheet)
-		for _, chartId := range sheet.Charts {
-			log.Println(chartId)
-			if env.Db.One("UUID", chartId, &models.Chart{}) != nil {
-				http.Error(w, fmt.Sprintf("Chart with uuid %v doesn't exist", chartId), http.StatusConflict)
-				return
-			}
-		}
-		err := env.Db.Save(&sheet)
+		json.Unmarshal(body, &validation.Data)
+		err := env.Validator.Struct(validation)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Sheets",
+				"CREATE",
+				err.Error(),
+				w)
+			return
+		}
+		err = env.Db.Save(&validation.Data)
+		if err != nil {
+			responses.WriteResourceStatusResponse(
+				http.StatusConflict,
+				"Sheets",
+				"CREATE",
+				err.Error(),
+				w)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added Sheet without error")
+			responses.WriteResourceStatusResponse(
+				http.StatusOK,
+				"Sheets",
+				"CREATE",
+				"",
+				w)
 		}
 	}
 }
@@ -110,32 +124,45 @@ func CreateSheet(env *utils.Env) httprouter.Handle {
 //	application/json
 //
 // Responses:
-//        200: StatusResponse
+//        200: ResourceStatusResponse
 func UpdateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var sheet models.Sheet
+		var validation responses.SheetCreationParams
 		body, _ := ioutil.ReadAll(r.Body)
 		uuid := ps.ByName("uuid")
-		sheet.UUID = uuid
-		json.Unmarshal(body, &sheet)
-		err := env.Db.One("UUID", uuid, &models.Sheet{})
+		json.Unmarshal(body, &validation.Data)
+		err := env.Validator.Struct(validation)
+		if err != nil {
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Sheets",
+				"UPDATE",
+				err.Error(),
+				w)
+			return
+		}
+		err = env.Db.One("UUID", uuid, &models.Sheet{})
 		if err != nil {
 			log.Println(err)
 			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
 			return
 		}
-		for _, chartId := range sheet.Charts {
-			if env.Db.One("ID", chartId, &models.Chart{}) != nil {
-				http.Error(w, fmt.Sprintf("Chart with uuid %v doesn't exist", chartId), http.StatusConflict)
-				return
-			}
-		}
-		err = env.Db.Update(&sheet)
+		err = env.Db.Update(&validation.Data)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusConflict), http.StatusConflict)
+			responses.WriteResourceStatusResponse(
+				http.StatusConflict,
+				"Sheets",
+				"UPDATE",
+				err.Error(),
+				w)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Updated Chart with ID %v without error", uuid)
+			responses.WriteResourceStatusResponse(
+				http.StatusOK,
+				"Sheets",
+				"UPDATE",
+				"",
+				w)
+			return
 		}
 	}
 }
@@ -150,23 +177,36 @@ func UpdateSheet(env *utils.Env) httprouter.Handle {
 //	application/json
 //
 // Responses:
-//        200: StatusResponse
+//        200: ResourceStatusResponse
 func DeleteSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var Sheet models.Sheet
+		var sheet models.Sheet
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &Sheet)
+		err := env.Db.One("UUID", uuid, &sheet)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Sheets",
+				"DELETE",
+				err.Error(),
+				w)
 			return
 		}
-		err = env.Db.DeleteStruct(&Sheet)
+		err = env.Db.DeleteStruct(&sheet)
 		if err != nil {
-			http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Sheets",
+				"DELETE",
+				err.Error(),
+				w)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Removed Sheet with %v successfully", uuid)
+		responses.WriteResourceStatusResponse(
+			http.StatusOK,
+			"Sheets",
+			"DELETE",
+			"",
+			w)
 	}
 }

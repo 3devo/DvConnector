@@ -2,9 +2,7 @@ package routing
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/3devo/feconnector/models"
@@ -50,16 +48,18 @@ func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 //
 // Responses:
 // 	200: LogFileResponse
-//	404: StatusResponse
+//	404: ResourceStatusResponse
 func GetLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("ID", uuid, &logFile)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
-				fmt.Sprintf("LogFile with uuid:%v not found", uuid),
+				"Logfiles",
+				"GET",
+				err.Error(),
 				w)
 			return
 		}
@@ -82,7 +82,7 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 // 	application/json
 //
 // Responses:
-//	default: StatusResponse
+//	default: ResourceStatusResponse
 func CreateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var validateModel responses.LogFileUpdateBody
@@ -92,17 +92,21 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 		json.Unmarshal([]byte(data.String()), &validateModel.Data)
 		err := env.Validator.Struct(validateModel)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
-				fmt.Sprintf("Log with uuid %v failed to create with error [%v]", data.Get("uuid").String(), err),
+				"Logfiles",
+				"CREATE",
+				err.Error(),
 				w)
 			return
 		}
 
 		if env.Db.One("UUID", data.Get("uuid").String(), &models.LogFile{}) == nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
-				fmt.Sprintf("Log with uuid: %v failed to create with error [UUID already exists]", data.Get("uuid").String()),
+				"Logfiles",
+				"CREATE",
+				err.Error(),
 				w)
 			return
 		}
@@ -112,15 +116,19 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 			data.Get("note").String())
 		err = env.Db.Save(logFile)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
-				fmt.Sprintf("Log with uuid: %v failed to create with error [%v]", logFile.UUID, err.Error()),
+				"Logfiles",
+				"CREATE",
+				err.Error(),
 				w)
 			return
 		}
-		responses.WriteStatusResponse(
+		responses.WriteResourceStatusResponse(
 			http.StatusOK,
-			fmt.Sprintf("Log with uuid: %v has been successfully created", logFile.UUID),
+			"GET",
+			"Logfiles",
+			"",
 			w)
 	}
 }
@@ -134,7 +142,7 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 // Consumes:
 //	application/json
 // Responses:
-//	default: StatusResponse
+//	default: ResourceStatusResponse
 func UpdateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var validateModel responses.LogFileUpdateBody
@@ -145,18 +153,22 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 		json.Unmarshal(body, &validateModel.Data)
 		err := env.Validator.Struct(validateModel)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
-				fmt.Sprintf("Log with uuid %v failed to create with error [%v]", data.Get("uuid").String(), err),
+				"Logfiles",
+				"CREATE",
+				err.Error(),
 				w)
 			return
 		}
 		uuid := ps.ByName("uuid")
 		err = env.Db.One("UUID", uuid, &logFile)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
-				fmt.Sprintf("LogFile with uuid:%v not found", data.Get("uuid").String()),
+				"Logfiles",
+				"UPDATE",
+				err.Error(),
 				w)
 			return
 		}
@@ -165,14 +177,18 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 			data.Get("note").String())
 		err = env.Db.Update(&logFile)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
-				fmt.Sprintf("Failed to update log with error [%v]", err.Error()),
+				"Logfiles",
+				"UPDATE",
+				err.Error(),
 				w)
 		} else {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusOK,
-				fmt.Sprintf("Updated LogFile with ID %v without error", uuid),
+				"Logfiles",
+				"UPDATE",
+				"",
 				w)
 		}
 	}
@@ -187,28 +203,36 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 // Consumes:
 //	application/json
 // Responses:
-//	default: StatusResponse
+//	default: ResourceStatusResponse
 func DeleteLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &logFile)
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Logfiles",
+				"DELETE",
+				err.Error(),
+				w)
 			return
 		}
 		err = logFile.DeleteLogFile(env)
 		if err != nil {
-			responses.WriteStatusResponse(
+			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
-				fmt.Sprintf("Log with uuid: %v failed to create with error [%v]", logFile.UUID, err.Error()),
+				"Logfiles",
+				"DELETE",
+				err.Error(),
 				w)
 			return
 		}
-		responses.WriteStatusResponse(
+		responses.WriteResourceStatusResponse(
 			http.StatusOK,
-			fmt.Sprintf("Log with uuid: %v has been successfully deleted", logFile.UUID),
+			"Logfiles",
+			"DELETE",
+			"",
 			w)
 	}
 }
