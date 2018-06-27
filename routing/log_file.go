@@ -53,7 +53,7 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		var logFile models.LogFile
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("ID", uuid, &logFile)
+		err := env.Db.One("UUID", uuid, &logFile)
 		if err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
@@ -64,7 +64,7 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 			return
 		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(logFile)
+		json.NewEncoder(w).Encode(responses.GenerateLogResponse(&logFile, env))
 	}
 }
 
@@ -110,11 +110,20 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		logFile, _ := models.CreateLogFile(
+		logFile, err := models.CreateLogFile(
 			data.Get("uuid").String(),
 			data.Get("name").String(),
 			data.Get("note").String())
-		err = env.Db.Save(logFile)
+		if err != nil {
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Logfiles",
+				"CREATE",
+				err.Error(),
+				w)
+			return
+		}
+		err = env.Db.Save(&logFile)
 		if err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
