@@ -1,8 +1,8 @@
 package utils
 
 import (
-	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 
@@ -40,7 +40,8 @@ func QueryBuilder(env *Env, r *http.Request) (storm.Query, error) {
 
 	// Generate equality filter
 	if params.Get("filter") != "" {
-		result := gjson.Parse(string(params.Get("filter")))
+		filter, _ := url.QueryUnescape(string(params.Get("filter")))
+		result := gjson.Parse(filter)
 		result.ForEach(func(key, value gjson.Result) bool {
 			selection = append(selection, q.Eq(strings.Title(value.Get("key").String()), value.Get("value").Value()))
 			return true
@@ -68,10 +69,12 @@ func QueryBuilder(env *Env, r *http.Request) (storm.Query, error) {
 
 	// Order by fieldnames
 	if params.Get("orderBy") != "" {
-		orderBy := string(params.Get("orderBy"))
+		orderBy, _ := url.QueryUnescape(string(params.Get("orderBy")))
 		tags := strings.Split(orderBy, ",")
+		for _, tag := range tags {
+			tag = strings.Title(tag)
+		}
 		query = query.OrderBy(tags...)
-		log.Println(tags)
 		reverse, _ := strconv.ParseBool(params.Get("reverse"))
 		if reverse {
 			query = query.Reverse()
