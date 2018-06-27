@@ -12,7 +12,7 @@ import (
 type ResourceStatusResponse struct {
 	// in: body
 	Body struct {
-		Code     int32  `json:"code"`
+		Code     int    `json:"code"`
 		Resource string `json:"resource"`
 		Action   string `json:"action"`
 		Error    string `json:"error"`
@@ -25,11 +25,12 @@ type UidPathParam struct {
 	UUID string `json:"uuid"`
 }
 
-func WriteResourceStatusResponse(code int32, resource string, action string, err string, w http.ResponseWriter) {
+func WriteResourceStatusResponse(code int, resource string, action string, err string, w http.ResponseWriter) {
 	var response ResourceStatusResponse
 	response.Body.Code = code
 	response.Body.Resource = resource
 	response.Body.Action = action
 	response.Body.Error = err
+	w.WriteHeader(code)
 	json.NewEncoder(w).Encode(response.Body)
 }
