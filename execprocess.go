@@ -117,7 +117,7 @@ func execRun(command string) {
 			h.broadcastSys <- mapB
 			return
 		} else {
-			log.Println("User:%s and password were valid. Running command.", user)
+			log.Printf("User:%s and password were valid. Running command.", user)
 		}
 	} else if *isAllowExec == false {
 		log.Printf("Error trying to execute terminal command. No user/pass provided or command line switch was not specified to allow exec command. Provide a valied username/password or restart spjs with -allowexec command line option to exec command.")
@@ -140,7 +140,7 @@ func execRun(command string) {
 	cmdOutput := ""
 	cmdReader, err := oscmd.StdoutPipe()
 	if err != nil {
-		log.Println(os.Stderr, "Error creating StdoutPipe for Cmd", err)
+		fmt.Fprintln(os.Stderr, "Error creating StdoutPipe for Cmd", err)
 		//os.Exit(1)
 		mapD := ExecCmd{ExecStatus: "Error", Id: id, Cmd: cmd, Args: argArr, Output: err.Error()}
 		mapB, _ := json.Marshal(mapD)
@@ -161,9 +161,9 @@ func execRun(command string) {
 
 	err = oscmd.Start()
 	if err != nil {
-		log.Println(os.Stderr, "Error starting Cmd", err)
+		fmt.Fprintln(os.Stderr, "Error starting Cmd", err)
 		//os.Exit(1)
-		mapD := ExecCmd{ExecStatus: "Error", Id: id, Cmd: cmd, Args: argArr, Output: fmt.Sprintf("Error starting Cmd", err)}
+		mapD := ExecCmd{ExecStatus: "Error", Id: id, Cmd: cmd, Args: argArr, Output: fmt.Sprintf("Error starting Cmd")}
 		mapB, _ := json.Marshal(mapD)
 		h.broadcastSys <- mapB
 		return
