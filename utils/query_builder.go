@@ -71,8 +71,8 @@ func QueryBuilder(env *Env, r *http.Request) (storm.Query, error) {
 	if params.Get("orderBy") != "" {
 		orderBy, _ := url.QueryUnescape(string(params.Get("orderBy")))
 		tags := strings.Split(orderBy, ",")
-		for _, tag := range tags {
-			tag = strings.Title(tag)
+		for i, tag := range tags {
+			tags[i] = strings.Title(tag)
 		}
 		query = query.OrderBy(tags...)
 		reverse, _ := strconv.ParseBool(params.Get("reverse"))
