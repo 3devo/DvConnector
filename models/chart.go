@@ -1,22 +1,22 @@
 package models
 
 type Axis struct {
-	Name  string `json:"name"`
-	Title string `json:"title"`
-	Range []int  `json:"range"`
+	Name  string `json:"name" validate:"required"`
+	Title string `json:"title" validate:"required"`
+	Range []int  `json:"range" validate:"min=1"`
 }
 
 type PlotDataInformation struct {
-	DataName string `json:"dataName"`
-	PlotName string `json:"plotName"`
-	Color    string `json:"color"`
-	Axis     string `json:"axis"`
+	DataName string `json:"dataName" validate:"required"`
+	PlotName string `json:"plotName" validate:"required"`
+	Color    string `json:"color" validate:"required" validate:"hexcolor"`
+	Axis     string `json:"axis" validate:"required,oneof y0 y1 y2"`
 }
 
 type Ruler struct {
-	Text  string `json:"text"`
-	Width int    `json:"width"`
-	Color string `json:"color"`
+	Text  string `json:"text" validate:"required"`
+	Width int    `json:"width" validate:"required"`
+	Color string `json:"color" validate:"hexcolor"`
 }
 
 // swagger:model Chart
@@ -27,5 +27,5 @@ type Chart struct {
 	Axes                []Axis                `json:"axes"`
 	HorizontalRulers    []Ruler               `json:"horizontalRulers"`
 	VerticalRulers      []Ruler               `json:"verticalRulers"`
-	Image               string                `json:"image"`
+	Image               string                `json:"image" validate:"base64"`
 }
