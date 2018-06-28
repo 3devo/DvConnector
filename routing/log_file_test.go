@@ -41,211 +41,214 @@ var logFiles = []models.LogFile{
 		HasNote:   true}}
 
 func TestGetSingle(t *testing.T) {
-	dir, db := prepareDB()
-	defer os.RemoveAll(dir)
-	defer db.Close()
-	env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+	Convey("Setup", t, func() {
+		dir, db := prepareDB()
+		defer os.RemoveAll(dir)
+		defer db.Close()
+		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+		Convey("Given a HTTP request for /api/x/logFiles/550e8400-e29b-41d4-a716-446655440000", func() {
 
-	Convey("Given a HTTP request for /api/x/logFiles/550e8400-e29b-41d4-a716-446655440000", t, func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles/:uuid", GetLogFile(env))
 
-		router := httprouter.New()
-		router.GET("/api/x/logFiles/:uuid", GetLogFile(env))
+			req := httptest.NewRequest("GET", "/api/x/logFiles/550e8400-e29b-41d4-a716-446655440000", nil)
+			resp := httptest.NewRecorder()
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles/550e8400-e29b-41d4-a716-446655440000", nil)
-		resp := httptest.NewRecorder()
+			Convey("When the request is handled by the Router", func() {
+				router.ServeHTTP(resp, req)
 
-		Convey("When the request is handled by the Router", func() {
-			router.ServeHTTP(resp, req)
+				Convey("Then the response should be a 200 because the item exists in the db", func() {
+					result := resp.Result()
+					body, _ := ioutil.ReadAll(result.Body)
+					expected, _ := json.Marshal(responses.GenerateLogResponse(&logFiles[0], env))
 
-			Convey("Then the response should be a 200 because the item exists in the db", func() {
-				result := resp.Result()
-				body, _ := ioutil.ReadAll(result.Body)
-				expected, _ := json.Marshal(responses.GenerateLogResponse(&logFiles[0], env))
-
-				So(result.StatusCode, ShouldEqual, 200)
-				So(body, ShouldResemble, append(expected, 10))
+					So(result.StatusCode, ShouldEqual, 200)
+					So(body, ShouldResemble, append(expected, 10))
+				})
 			})
 		})
-	})
 
-	Convey("Given a HTTP request for /api/x/logFiles/undefined", t, func() {
-		router := httprouter.New()
-		router.GET("/api/x/logFiles/:uuid", GetLogFile(env))
+		Convey("Given a HTTP request for /api/x/logFiles/undefined", func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles/:uuid", GetLogFile(env))
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles/undefined", nil)
-		resp := httptest.NewRecorder()
+			req := httptest.NewRequest("GET", "/api/x/logFiles/undefined", nil)
+			resp := httptest.NewRecorder()
 
-		Convey("When the request is handled by the Router", func() {
-			router.ServeHTTP(resp, req)
+			Convey("When the request is handled by the Router", func() {
+				router.ServeHTTP(resp, req)
 
-			Convey("Then the response should be a 404 with correct response body", func() {
-				result := resp.Result()
-				body, _ := ioutil.ReadAll(result.Body)
-				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 404
-				response.Body.Resource = "Logfiles"
-				response.Body.Action = "GET"
-				response.Body.Error = "not found"
-				expected, _ := json.Marshal(response.Body)
+				Convey("Then the response should be a 404 with correct response body", func() {
+					result := resp.Result()
+					body, _ := ioutil.ReadAll(result.Body)
+					response := responses.ResourceStatusResponse{}
+					response.Body.Code = 404
+					response.Body.Resource = "Logfiles"
+					response.Body.Action = "GET"
+					response.Body.Error = "not found"
+					expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 404)
-				So(string(body), ShouldResemble, string(append(expected, 10)))
+					So(result.StatusCode, ShouldEqual, 404)
+					So(string(body), ShouldResemble, string(append(expected, 10)))
+				})
 			})
 		})
 	})
 }
 
 func TestGetMultiple(t *testing.T) {
-	dir, db := prepareDB()
-	defer os.RemoveAll(dir)
-	defer db.Close()
-	env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+	Convey("Setup", t, func() {
+		dir, db := prepareDB()
+		defer os.RemoveAll(dir)
+		defer db.Close()
+		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
 
-	Convey("Given a HTTP request for api/x/logFiles", t, func() {
-		router := httprouter.New()
-		router.GET("/api/x/logFiles", GetAllLogFiles(env))
+		Convey("Given a HTTP request for api/x/logFiles", func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles", GetAllLogFiles(env))
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
-		resp := httptest.NewRecorder()
-		router.ServeHTTP(resp, req)
-		Convey("Then the response should return 200 with the 3 logFiles", func() {
-			result := resp.Result()
-			body, _ := ioutil.ReadAll(result.Body)
-			logResponses := make([]*responses.LogFileResponse, 0)
-			for _, model := range logFiles {
-				logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
-			}
-			expected, _ := json.Marshal(logResponses)
+			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
+			resp := httptest.NewRecorder()
+			router.ServeHTTP(resp, req)
+			Convey("Then the response should return 200 with the 3 logFiles", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				logResponses := make([]*responses.LogFileResponse, 0)
+				for _, model := range logFiles {
+					logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
+				}
+				expected, _ := json.Marshal(logResponses)
 
-			So(result.StatusCode, ShouldEqual, 200)
-			So(body, ShouldResemble, append(expected, 10))
+				So(result.StatusCode, ShouldEqual, 200)
+				So(body, ShouldResemble, append(expected, 10))
+			})
 		})
-	})
 
-	Convey("Given a HTTP request for api/x/logFiles?filter=[{\"key\":\"name\", \"value\":\"log1\"}]", t, func() {
-		router := httprouter.New()
-		router.GET("/api/x/logFiles", GetAllLogFiles(env))
+		Convey("Given a HTTP request for api/x/logFiles?filter=[{\"key\":\"name\", \"value\":\"log1\"}]", func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles", GetAllLogFiles(env))
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
-		q := req.URL.Query()
-		q.Add("filter", "[{\"key\":\"name\", \"value\":\"log1\"}]")
-		req.URL.RawQuery = q.Encode()
+			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
+			q := req.URL.Query()
+			q.Add("filter", "[{\"key\":\"name\", \"value\":\"log1\"}]")
+			req.URL.RawQuery = q.Encode()
 
-		resp := httptest.NewRecorder()
-		router.ServeHTTP(resp, req)
-		Convey("Then the response should return 200 with the 1 logFiles", func() {
-			result := resp.Result()
-			body, _ := ioutil.ReadAll(result.Body)
-			logResponses := make([]*responses.LogFileResponse, 0)
-			logResponses = append(logResponses, responses.GenerateLogResponse(&logFiles[0], env))
-			expected, _ := json.Marshal(logResponses)
+			resp := httptest.NewRecorder()
+			router.ServeHTTP(resp, req)
+			Convey("Then the response should return 200 with the 1 logFiles", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				logResponses := make([]*responses.LogFileResponse, 0)
+				logResponses = append(logResponses, responses.GenerateLogResponse(&logFiles[0], env))
+				expected, _ := json.Marshal(logResponses)
 
-			So(result.StatusCode, ShouldEqual, 200)
-			So(body, ShouldResemble, append(expected, 10))
+				So(result.StatusCode, ShouldEqual, 200)
+				So(body, ShouldResemble, append(expected, 10))
+			})
 		})
-	})
 
-	Convey("Given a HTTP request for api/x/logFiles?skip=1", t, func() {
-		router := httprouter.New()
-		router.GET("/api/x/logFiles", GetAllLogFiles(env))
+		Convey("Given a HTTP request for api/x/logFiles?skip=1", func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles", GetAllLogFiles(env))
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
-		q := req.URL.Query()
-		q.Add("skip", "1")
-		req.URL.RawQuery = q.Encode()
+			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
+			q := req.URL.Query()
+			q.Add("skip", "1")
+			req.URL.RawQuery = q.Encode()
 
-		resp := httptest.NewRecorder()
-		router.ServeHTTP(resp, req)
-		Convey("Then the response should return 200 with the 2 logFiles", func() {
-			result := resp.Result()
-			body, _ := ioutil.ReadAll(result.Body)
-			logResponses := make([]*responses.LogFileResponse, 0)
-			for _, model := range logFiles[1:] {
-				logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
-			}
-			expected, _ := json.Marshal(logResponses)
+			resp := httptest.NewRecorder()
+			router.ServeHTTP(resp, req)
+			Convey("Then the response should return 200 with the 2 logFiles", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				logResponses := make([]*responses.LogFileResponse, 0)
+				for _, model := range logFiles[1:] {
+					logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
+				}
+				expected, _ := json.Marshal(logResponses)
 
-			So(result.StatusCode, ShouldEqual, 200)
-			So(body, ShouldResemble, append(expected, 10))
+				So(result.StatusCode, ShouldEqual, 200)
+				So(body, ShouldResemble, append(expected, 10))
+			})
 		})
-	})
 
-	Convey("Given a HTTP request for api/x/logFiles?limit=1", t, func() {
-		router := httprouter.New()
-		router.GET("/api/x/logFiles", GetAllLogFiles(env))
+		Convey("Given a HTTP request for api/x/logFiles?limit=1", func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles", GetAllLogFiles(env))
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
-		q := req.URL.Query()
-		q.Add("limit", "1")
-		req.URL.RawQuery = q.Encode()
+			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
+			q := req.URL.Query()
+			q.Add("limit", "1")
+			req.URL.RawQuery = q.Encode()
 
-		resp := httptest.NewRecorder()
-		router.ServeHTTP(resp, req)
-		Convey("Then the response should return 200 with the 2 logFiles", func() {
-			result := resp.Result()
-			body, _ := ioutil.ReadAll(result.Body)
-			logResponses := make([]*responses.LogFileResponse, 0)
-			logResponses = append(logResponses, responses.GenerateLogResponse(&logFiles[0], env))
-			expected, _ := json.Marshal(logResponses)
+			resp := httptest.NewRecorder()
+			router.ServeHTTP(resp, req)
+			Convey("Then the response should return 200 with the 2 logFiles", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				logResponses := make([]*responses.LogFileResponse, 0)
+				logResponses = append(logResponses, responses.GenerateLogResponse(&logFiles[0], env))
+				expected, _ := json.Marshal(logResponses)
 
-			So(result.StatusCode, ShouldEqual, 200)
-			So(body, ShouldResemble, append(expected, 10))
+				So(result.StatusCode, ShouldEqual, 200)
+				So(body, ShouldResemble, append(expected, 10))
+			})
 		})
-	})
 
-	Convey("Given a HTTP request for api/x/logFiles?orderBy=[timestamp]", t, func() {
-		router := httprouter.New()
-		router.GET("/api/x/logFiles", GetAllLogFiles(env))
+		Convey("Given a HTTP request for api/x/logFiles?orderBy=[timestamp]", func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles", GetAllLogFiles(env))
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
-		q := req.URL.Query()
-		q.Add("orderBy", "timestamp")
-		req.URL.RawQuery = q.Encode()
+			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
+			q := req.URL.Query()
+			q.Add("orderBy", "timestamp")
+			req.URL.RawQuery = q.Encode()
 
-		resp := httptest.NewRecorder()
-		router.ServeHTTP(resp, req)
-		Convey("Then the response should return 200 with the 3 logFiles", func() {
-			result := resp.Result()
-			body, _ := ioutil.ReadAll(result.Body)
-			logResponses := make([]*responses.LogFileResponse, 0)
-			for _, model := range logFiles {
-				logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
-			}
-			expected, _ := json.Marshal(logResponses)
+			resp := httptest.NewRecorder()
+			router.ServeHTTP(resp, req)
+			Convey("Then the response should return 200 with the 3 logFiles", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				logResponses := make([]*responses.LogFileResponse, 0)
+				for _, model := range logFiles {
+					logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
+				}
+				expected, _ := json.Marshal(logResponses)
 
-			So(result.StatusCode, ShouldEqual, 200)
-			So(body, ShouldResemble, append(expected, 10))
+				So(result.StatusCode, ShouldEqual, 200)
+				So(body, ShouldResemble, append(expected, 10))
+			})
 		})
-	})
 
-	Convey("Given a HTTP request for api/x/logFiles?orderBy=[timestamp]&reverse=true", t, func() {
-		router := httprouter.New()
-		router.GET("/api/x/logFiles", GetAllLogFiles(env))
+		Convey("Given a HTTP request for api/x/logFiles?orderBy=[timestamp]&reverse=true", func() {
+			router := httprouter.New()
+			router.GET("/api/x/logFiles", GetAllLogFiles(env))
 
-		req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
-		q := req.URL.Query()
-		q.Add("orderBy", "timestamp")
-		q.Add("reverse", "true")
-		req.URL.RawQuery = q.Encode()
+			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
+			q := req.URL.Query()
+			q.Add("orderBy", "timestamp")
+			q.Add("reverse", "true")
+			req.URL.RawQuery = q.Encode()
 
-		resp := httptest.NewRecorder()
-		router.ServeHTTP(resp, req)
-		Convey("Then the response should return 200 with the 3 logFiles", func() {
-			result := resp.Result()
-			body, _ := ioutil.ReadAll(result.Body)
-			logResponses := make([]*responses.LogFileResponse, 0)
-			for _, model := range logFiles {
-				logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
-			}
-			reversed := [3]*responses.LogFileResponse{
-				logResponses[2],
-				logResponses[1],
-				logResponses[0],
-			}
-			expected, _ := json.Marshal(reversed)
+			resp := httptest.NewRecorder()
+			router.ServeHTTP(resp, req)
+			Convey("Then the response should return 200 with the 3 logFiles", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				logResponses := make([]*responses.LogFileResponse, 0)
+				for _, model := range logFiles {
+					logResponses = append(logResponses, responses.GenerateLogResponse(&model, env))
+				}
+				reversed := [3]*responses.LogFileResponse{
+					logResponses[2],
+					logResponses[1],
+					logResponses[0],
+				}
+				expected, _ := json.Marshal(reversed)
 
-			So(result.StatusCode, ShouldEqual, 200)
-			So(body, ShouldResemble, append(expected, 10))
+				So(result.StatusCode, ShouldEqual, 200)
+				So(body, ShouldResemble, append(expected, 10))
+			})
 		})
 	})
 }
