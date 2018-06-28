@@ -6,6 +6,7 @@ import (
 )
 
 type Env struct {
+	FileDir   string
 	Db        *storm.DB
 	Validator *validator.Validate
 }

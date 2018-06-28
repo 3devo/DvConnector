@@ -44,6 +44,7 @@ import (
 	"go/build"
 	"log"
 	"net/http"
+	"path/filepath"
 	//"path/filepath"
 	"errors"
 	"fmt"
@@ -72,12 +73,13 @@ var (
 	versionFloat = float32(0.1)
 	addr         = flag.String("addr", ":8989", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	//	addr  = flag.String("addr", ":8980", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
-	saddr     = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
-	scert     = flag.String("scert", "cert.pem", "https certificate file")
-	skey      = flag.String("skey", "key.pem", "https key file")
-	hibernate = flag.Bool("hibernate", false, "start hibernated")
-	directory = flag.String("d", "./public", "the directory of static file to host")
-	noBrowser = flag.Bool("b", false, "Don't open the webpage")
+	saddr       = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
+	scert       = flag.String("scert", "cert.pem", "https certificate file")
+	skey        = flag.String("skey", "key.pem", "https key file")
+	hibernate   = flag.Bool("hibernate", false, "start hibernated")
+	frontendDir = flag.String("d", "./public", "the directory of static file to host")
+	files       = flag.String("files", "./files", "the directory of saved logs and notes")
+	noBrowser   = flag.Bool("b", false, "Don't open the webpage")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
 	verbose = flag.Bool("v", false, "show debug logging")
@@ -138,8 +140,8 @@ func launchSelfLater() {
 }
 
 func main() {
-	os.MkdirAll("./logs", os.ModePerm)
-	os.MkdirAll("./notes", os.ModePerm)
+	os.MkdirAll(filepath.Join(*files, "logs"), os.ModePerm)
+	os.MkdirAll(filepath.Join(*files, "notes"), os.ModePerm)
 	db.Init(&models.Workspace{})
 	db.Init(&models.Sheet{})
 	db.Init(&models.Chart{})
@@ -169,7 +171,7 @@ func main() {
 		return true
 	})
 
-	env := &utils.Env{Db: db, Validator: validate}
+	env := &utils.Env{Db: db, Validator: validate, FileDir: *files}
 	// Test USB list
 	//	GetUsbList()
 
@@ -327,7 +329,7 @@ func main() {
 	router.DELETE(restUrl+"workspaces/:uuid", routing.DeleteWorkspace(env))
 	router.PUT(restUrl+"workspaces/:uuid", routing.UpdateWorkspace(env))
 
-	router.NotFound = http.FileServer(http.Dir(*directory))
+	router.NotFound = http.FileServer(http.Dir(*frontendDir))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
 	negroniMiddleware := negroni.New()
