@@ -2,7 +2,6 @@ package models
 
 import (
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"time"
@@ -42,7 +41,6 @@ func CreateLogFile(uuid string, name string, note string, env *utils.Env) (*LogF
 			return nil, err
 		}
 	}
-	log.Println(logFile)
 	err = env.Db.Save(logFile)
 	if err != nil {
 		return nil, err
