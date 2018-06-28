@@ -2,6 +2,7 @@ package routing
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 
@@ -100,30 +101,20 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-
 		if env.Db.One("UUID", data.Get("uuid").String(), &models.LogFile{}) == nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Logfiles",
 				"CREATE",
-				err.Error(),
+				fmt.Sprintf("Logfile with %v already exists", data.Get("uuid").String()),
 				w)
 			return
 		}
-		logFile, err := models.CreateLogFile(
+		_, err = models.CreateLogFile(
 			data.Get("uuid").String(),
 			data.Get("name").String(),
-			data.Get("note").String())
-		if err != nil {
-			responses.WriteResourceStatusResponse(
-				http.StatusInternalServerError,
-				"Logfiles",
-				"CREATE",
-				err.Error(),
-				w)
-			return
-		}
-		err = env.Db.Save(&logFile)
+			data.Get("note").String(),
+			env)
 		if err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
@@ -135,8 +126,8 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 		}
 		responses.WriteResourceStatusResponse(
 			http.StatusOK,
-			"GET",
 			"Logfiles",
+			"CREATE",
 			"",
 			w)
 	}
@@ -165,7 +156,7 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Logfiles",
-				"CREATE",
+				"UPDATE",
 				err.Error(),
 				w)
 			return
@@ -181,10 +172,10 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		logFile.UpdateLogFile(
+		err = logFile.UpdateLogFile(
 			data.Get("name").String(),
-			data.Get("note").String())
-		err = env.Db.Update(&logFile)
+			data.Get("note").String(),
+			env)
 		if err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
