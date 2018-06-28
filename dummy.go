@@ -11,7 +11,7 @@ type dummy struct {
 }
 
 var d = dummy{
-//myvar: make(mytype string),
+	//myvar: make(mytype string),
 }
 
 func (d *dummy) run() {

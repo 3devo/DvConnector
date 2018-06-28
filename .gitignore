@@ -8,3 +8,6 @@ snapshot/*
 *.exe
 
 release/*
+
+swagger.json
+feconnector.db*

@@ -41,7 +41,7 @@ func GetUsbList() []UsbItem {
 
 	// the call to getUsbList() is now handle by the usb_*.go files
 	//if runtime.GOOS == "linux" && runtime.GOARCH == "arm" {
-		usbList = getUsbList()
+	usbList = getUsbList()
 	//}
 
 	return usbList
