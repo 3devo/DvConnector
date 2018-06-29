@@ -94,7 +94,7 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 				http.StatusInternalServerError,
 				"Charts",
 				"CREATE",
-				err.Error(),
+				fmt.Sprintf("Chart with %v already exists", data.Get("uuid").String()),
 				w)
 			return
 		}
@@ -109,8 +109,12 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Added chart %v without error", validation.Data.UUID)
+			responses.WriteResourceStatusResponse(
+				http.StatusOK,
+				"Charts",
+				"CREATE",
+				"",
+				w)
 		}
 	}
 }
@@ -126,12 +130,22 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 //	200: ResourceStatusResponse
 func UpdateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var chart models.Chart
+		var validation responses.ChartCreationParam
 		body, _ := ioutil.ReadAll(r.Body)
-		uuid := ps.ByName("uuid")
-		chart.UUID = uuid
-		json.Unmarshal(body, &chart)
-		err := env.Db.One("UUID", uuid, &models.Chart{})
+		data := gjson.Parse(string(body))
+
+		json.Unmarshal(body, &validation.Data)
+		err := env.Validator.Struct(validation)
+		if err != nil {
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Charts",
+				"UPDATE",
+				err.Error(),
+				w)
+			return
+		}
+		err = env.Db.One("UUID", data.Get("uuid").String(), &models.Chart{})
 		if err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
@@ -142,7 +156,7 @@ func UpdateChart(env *utils.Env) httprouter.Handle {
 			return
 		}
 
-		err = env.Db.Update(&chart)
+		err = env.Db.Update(&validation.Data)
 		if err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
@@ -151,8 +165,12 @@ func UpdateChart(env *utils.Env) httprouter.Handle {
 				err.Error(),
 				w)
 		} else {
-			w.WriteHeader(http.StatusOK)
-			fmt.Fprintf(w, "Updated Chart with ID %v without error", uuid)
+			responses.WriteResourceStatusResponse(
+				http.StatusOK,
+				"Charts",
+				"UPDATE",
+				"",
+				w)
 		}
 	}
 }
@@ -190,8 +208,12 @@ func DeleteChart(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Deleted Chart with ID %v without error", uuid)
+		responses.WriteResourceStatusResponse(
+			http.StatusOK,
+			"Charts",
+			"DELETE",
+			"",
+			w)
 
 	}
 }
