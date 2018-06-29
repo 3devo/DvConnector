@@ -40,9 +40,9 @@ var logFiles = []models.LogFile{
 		Timestamp: 3,
 		HasNote:   true}}
 
-func TestGetSingle(t *testing.T) {
+func TestGetSingleLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareDB()
+		dir, db := prepareLogDB()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
@@ -96,9 +96,9 @@ func TestGetSingle(t *testing.T) {
 	})
 }
 
-func TestGetMultiple(t *testing.T) {
+func TestGetMultipleLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareDB()
+		dir, db := prepareLogDB()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
@@ -253,9 +253,9 @@ func TestGetMultiple(t *testing.T) {
 	})
 }
 
-func TestCreate(t *testing.T) {
+func TestCreateLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareDB()
+		dir, db := prepareLogDB()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
@@ -366,9 +366,9 @@ func TestCreate(t *testing.T) {
 	})
 }
 
-func TestUpdate(t *testing.T) {
+func TestUpdateLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareDB()
+		dir, db := prepareLogDB()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
@@ -483,9 +483,9 @@ func TestUpdate(t *testing.T) {
 	})
 }
 
-func TestDelete(t *testing.T) {
+func TestDeleteLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareDB()
+		dir, db := prepareLogDB()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
@@ -540,7 +540,7 @@ func TestDelete(t *testing.T) {
 	})
 }
 
-func prepareDB() (string, *storm.DB) {
+func prepareLogDB() (string, *storm.DB) {
 	dir := filepath.Join(os.TempDir(), "feconnector-test")
 	os.MkdirAll(dir, os.ModePerm)
 	db, _ := storm.Open(filepath.Join(dir, "storm.db"))
