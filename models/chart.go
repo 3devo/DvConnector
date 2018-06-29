@@ -10,7 +10,7 @@ type PlotDataInformation struct {
 	DataName string `json:"dataName" validate:"required"`
 	PlotName string `json:"plotName" validate:"required"`
 	Color    string `json:"color" validate:"required" validate:"hexcolor"`
-	Axis     string `json:"axis" validate:"required,oneof y0 y1 y2"`
+	Axis     string `json:"axis" validate:"oneof y0 y1 y2"`
 }
 
 type Ruler struct {
