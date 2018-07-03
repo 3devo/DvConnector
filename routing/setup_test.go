@@ -50,6 +50,18 @@ var sheets = []models.Sheet{
 		UUID:  "550e8400-e29b-41d4-a716-446655440002",
 		Title: "sheet2"}}
 
+var workspaces = []models.Workspace{
+	{
+		UUID:   "550e8400-e29b-41d4-a716-446655440000",
+		Title:  "workspace0",
+		Sheets: []string{"550e8400-e29b-41d4-a716-446655440000"}},
+	{
+		UUID:  "550e8400-e29b-41d4-a716-446655440001",
+		Title: "workspace1"},
+	{
+		UUID:  "550e8400-e29b-41d4-a716-446655440002",
+		Title: "workspace2"}}
+
 func PrepareDb() (string, *storm.DB) {
 	dir := filepath.Join(os.TempDir(), "feconnector-test")
 	os.MkdirAll(dir, os.ModePerm)
@@ -76,6 +88,10 @@ func PrepareDb() (string, *storm.DB) {
 
 	for i := range sheets {
 		db.Save(&sheets[i])
+	}
+
+	for i := range workspaces {
+		db.Save(&workspaces[i])
 	}
 	return dir, db
 }
