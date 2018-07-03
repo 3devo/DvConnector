@@ -6,7 +6,7 @@ import (
 	"github.com/asdine/storm/q"
 )
 
-// A single logFile response model
+// SheetResponse is a single logFile response model
 //
 // This is used for returning a response with a single sheet object as body
 //
@@ -17,9 +17,9 @@ type SheetResponse struct {
 	Charts []models.Chart `json:"charts"`
 }
 
-// Parameters needed to create a sheet object
+// SheetCreationBody is the body that is needed to create a new sheet through rest
 // swagger:parameters CreateSheet UpdateSheet
-type SheetCreationParam struct {
+type SheetCreationBody struct {
 	//in:body
 	Data models.Sheet `json:"data"`
 }

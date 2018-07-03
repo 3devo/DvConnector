@@ -74,7 +74,7 @@ func GetChart(env *utils.Env) httprouter.Handle {
 //	200: ResourceStatusResponse
 func CreateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.ChartCreationParam
+		var validation responses.ChartCreationBody
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
 
@@ -130,7 +130,7 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 //	200: ResourceStatusResponse
 func UpdateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.ChartCreationParam
+		var validation responses.ChartCreationBody
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
 

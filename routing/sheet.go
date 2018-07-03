@@ -82,7 +82,7 @@ func GetSheet(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func CreateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.SheetCreationParam
+		var validation responses.SheetCreationBody
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
 		json.Unmarshal(body, &validation.Data)
@@ -138,7 +138,7 @@ func CreateSheet(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func UpdateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.SheetCreationParam
+		var validation responses.SheetCreationBody
 		body, _ := ioutil.ReadAll(r.Body)
 		uuid := ps.ByName("uuid")
 		json.Unmarshal(body, &validation.Data)

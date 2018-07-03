@@ -240,7 +240,7 @@ func TestCreateLogFile(t *testing.T) {
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
 
-		updateBody := &responses.LogFileUpdateBody{}
+		updateBody := &responses.LogFileCreationBody{}
 		updateBody.Data.UUID = uuid.Must(uuid.NewV4()).String()
 		updateBody.Data.Name = "test"
 		updateBody.Data.Note = "test note"
@@ -312,7 +312,7 @@ func TestCreateLogFile(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Logfiles"
 				response.Body.Action = "CREATE"
-				response.Body.Error = "Key: 'LogFileUpdateBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
+				response.Body.Error = "Key: 'LogFileCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -336,7 +336,7 @@ func TestCreateLogFile(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Logfiles"
 				response.Body.Action = "CREATE"
-				response.Body.Error = "Key: 'LogFileUpdateBody.Data.Name' Error:Field validation for 'Name' failed on the 'required' tag"
+				response.Body.Error = "Key: 'LogFileCreationBody.Data.Name' Error:Field validation for 'Name' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -356,7 +356,7 @@ func TestUpdateLogFile(t *testing.T) {
 		env.Validator.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 			return utils.IsValidUUID(fl.Field().String())
 		})
-		updateBody := &responses.LogFileUpdateBody{}
+		updateBody := &responses.LogFileCreationBody{}
 		updateBody.Data.UUID = logFiles[0].UUID
 		updateBody.Data.Name = logFiles[0].Name
 		updateBody.Data.Note = "test note"
@@ -427,7 +427,7 @@ func TestUpdateLogFile(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Logfiles"
 				response.Body.Action = "UPDATE"
-				response.Body.Error = "Key: 'LogFileUpdateBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
+				response.Body.Error = "Key: 'LogFileCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -453,7 +453,7 @@ func TestUpdateLogFile(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Logfiles"
 				response.Body.Action = "UPDATE"
-				response.Body.Error = "Key: 'LogFileUpdateBody.Data.Name' Error:Field validation for 'Name' failed on the 'required' tag"
+				response.Body.Error = "Key: 'LogFileCreationBody.Data.Name' Error:Field validation for 'Name' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)

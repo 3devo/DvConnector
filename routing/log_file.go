@@ -86,7 +86,7 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 //	default: ResourceStatusResponse
 func CreateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validateModel responses.LogFileUpdateBody
+		var validateModel responses.LogFileCreationBody
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
 		//validation
@@ -145,7 +145,7 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 //	default: ResourceStatusResponse
 func UpdateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validateModel responses.LogFileUpdateBody
+		var validateModel responses.LogFileCreationBody
 		var logFile models.LogFile
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))

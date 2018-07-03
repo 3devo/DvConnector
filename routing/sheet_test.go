@@ -231,7 +231,7 @@ func TestCreateSheet(t *testing.T) {
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
 
-		updateBody := &responses.SheetCreationParam{Data: sheets[0]}
+		updateBody := &responses.SheetCreationBody{Data: sheets[0]}
 		updateBody.Data.UUID = "550e8400-e29b-41d4-a716-446655440003"
 		env.Validator.RegisterValidation("chart-exists", func(fl validator.FieldLevel) bool {
 			return true
@@ -308,7 +308,7 @@ func TestCreateSheet(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
-				response.Body.Error = "Key: 'SheetCreationParam.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
+				response.Body.Error = "Key: 'SheetCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -332,7 +332,7 @@ func TestCreateSheet(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
-				response.Body.Error = "Key: 'SheetCreationParam.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
+				response.Body.Error = "Key: 'SheetCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -360,7 +360,7 @@ func TestCreateSheet(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
-				response.Body.Error = "Key: 'SheetCreationParam.Data.Charts[0]' Error:Field validation for 'Charts[0]' failed on the 'chart-exists' tag"
+				response.Body.Error = "Key: 'SheetCreationBody.Data.Charts[0]' Error:Field validation for 'Charts[0]' failed on the 'chart-exists' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -383,7 +383,7 @@ func TestUpdateSheet(t *testing.T) {
 		env.Validator.RegisterValidation("chart-exists", func(fl validator.FieldLevel) bool {
 			return true
 		})
-		updateBody := responses.SheetCreationParam{Data: sheets[0]}
+		updateBody := responses.SheetCreationBody{Data: sheets[0]}
 
 		router := httprouter.New()
 		Convey("Given a HTTP PUT request for api/x/sheets/uuid with a valid body", func() {
@@ -451,7 +451,7 @@ func TestUpdateSheet(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
-				response.Body.Error = "Key: 'SheetCreationParam.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
+				response.Body.Error = "Key: 'SheetCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
@@ -477,7 +477,7 @@ func TestUpdateSheet(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
-				response.Body.Error = "Key: 'SheetCreationParam.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
+				response.Body.Error = "Key: 'SheetCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -507,7 +507,7 @@ func TestUpdateSheet(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
-				response.Body.Error = "Key: 'SheetCreationParam.Data.Charts[0]' Error:Field validation for 'Charts[0]' failed on the 'chart-exists' tag"
+				response.Body.Error = "Key: 'SheetCreationBody.Data.Charts[0]' Error:Field validation for 'Charts[0]' failed on the 'chart-exists' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)

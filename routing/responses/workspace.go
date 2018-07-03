@@ -6,7 +6,7 @@ import (
 	"github.com/asdine/storm/q"
 )
 
-// A single logFile response model
+// WorkspaceResponse is a single logFile response model
 //
 // This is used for returning a response with a single sheet object as body
 //
@@ -17,14 +17,15 @@ type WorkspaceResponse struct {
 	Sheets []*SheetResponse `json:"sheets"`
 }
 
+// WorkspaceCreationBody is a body that is needed to create workspaces through rest
 // Parameters needed to create a sheet object
 // swagger:parameters CreateWorkspace UpdateWorkspace
-type WorkspaceCreationParams struct {
+type WorkspaceCreationBody struct {
 	//in:body
 	Data models.Workspace
 }
 
-// GenerateWorkSpaceResponse returns a WorkSpaceResponse object filled with actual sheet and chart data instead of id
+// GenerateWorkspaceResponseObject returns a WorkSpaceResponse object filled with actual sheet and chart data instead of id
 func GenerateWorkspaceResponseObject(workspace *models.Workspace, env *utils.Env) *WorkspaceResponse {
 	response := new(WorkspaceResponse)
 	var sheets []models.Sheet

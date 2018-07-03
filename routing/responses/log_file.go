@@ -9,7 +9,7 @@ import (
 	"github.com/3devo/feconnector/utils"
 )
 
-// A single logFile response model
+// LogFileResponse is a single logFile response model
 //
 // This is used for returning a response with a single order as body
 //
@@ -22,10 +22,10 @@ type LogFileResponse struct {
 	Log       string `json:"log"`
 }
 
-// A LogFileUpdate body model
+// LogFileCreationBody is a model for creating logfiles through rest
 // This is used to validate the update request
 // swagger:parameters UpdateLogFile CreateLogFile
-type LogFileUpdateBody struct {
+type LogFileCreationBody struct {
 	// in:body
 	Data struct {
 		// required

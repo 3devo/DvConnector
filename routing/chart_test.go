@@ -225,7 +225,7 @@ func TestCreateChart(t *testing.T) {
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
 
-		updateBody := &responses.ChartCreationParam{Data: CreateChart(&charts[0])}
+		updateBody := &responses.ChartCreationBody{Data: CreateChart(&charts[0])}
 		updateBody.Data.UUID = "550e8400-e29b-41d4-a716-446655440003"
 
 		env.Validator.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
@@ -295,7 +295,7 @@ func TestCreateChart(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Charts"
 				response.Body.Action = "CREATE"
-				response.Body.Error = "Key: 'ChartCreationParam.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
+				response.Body.Error = "Key: 'ChartCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -319,7 +319,7 @@ func TestCreateChart(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Charts"
 				response.Body.Action = "CREATE"
-				response.Body.Error = "Key: 'ChartCreationParam.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
+				response.Body.Error = "Key: 'ChartCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
@@ -339,7 +339,7 @@ func TestUpdateChart(t *testing.T) {
 		env.Validator.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 			return utils.IsValidUUID(fl.Field().String())
 		})
-		updateBody := responses.ChartCreationParam{Data: CreateChart(&charts[0])}
+		updateBody := responses.ChartCreationBody{Data: CreateChart(&charts[0])}
 
 		router := httprouter.New()
 		Convey("Given a HTTP PUT request for api/x/charts/uuid with a valid body", func() {
@@ -407,7 +407,7 @@ func TestUpdateChart(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Charts"
 				response.Body.Action = "UPDATE"
-				response.Body.Error = "Key: 'ChartCreationParam.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
+				response.Body.Error = "Key: 'ChartCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
@@ -433,7 +433,7 @@ func TestUpdateChart(t *testing.T) {
 				response.Body.Code = 500
 				response.Body.Resource = "Charts"
 				response.Body.Action = "UPDATE"
-				response.Body.Error = "Key: 'ChartCreationParam.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
+				response.Body.Error = "Key: 'ChartCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(result.StatusCode, ShouldEqual, 500)
