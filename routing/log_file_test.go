@@ -1,4 +1,4 @@
-package routing
+package routing_test
 
 import (
 	"encoding/json"
@@ -7,49 +7,29 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
-	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
-	"github.com/3devo/feconnector/models"
+	"github.com/3devo/feconnector/routing"
 	"github.com/3devo/feconnector/routing/responses"
 	uuid "github.com/satori/go.uuid"
 
 	"github.com/3devo/feconnector/utils"
-	"github.com/asdine/storm"
 	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
-var logFiles = []models.LogFile{
-	{
-		UUID:      "550e8400-e29b-41d4-a716-446655440000",
-		Name:      "log1",
-		Timestamp: 1,
-		HasNote:   false},
-	{
-		UUID:      "550e8400-e29b-41d4-a716-446655440001",
-		Name:      "log2",
-		Timestamp: 2,
-		HasNote:   false},
-	{
-		UUID:      "550e8400-e29b-41d4-a716-446655440002",
-		Name:      "log3",
-		Timestamp: 3,
-		HasNote:   true}}
-
 func TestGetSingleLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareLogDB()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
 		Convey("Given a HTTP request for /api/x/logFiles/550e8400-e29b-41d4-a716-446655440000", func() {
 
 			router := httprouter.New()
-			router.GET("/api/x/logFiles/:uuid", GetLogFile(env))
+			router.GET("/api/x/logFiles/:uuid", routing.GetLogFile(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles/550e8400-e29b-41d4-a716-446655440000", nil)
 			resp := httptest.NewRecorder()
@@ -70,7 +50,7 @@ func TestGetSingleLogFile(t *testing.T) {
 
 		Convey("Given a HTTP request for /api/x/logFiles/undefined", func() {
 			router := httprouter.New()
-			router.GET("/api/x/logFiles/:uuid", GetLogFile(env))
+			router.GET("/api/x/logFiles/:uuid", routing.GetLogFile(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles/undefined", nil)
 			resp := httptest.NewRecorder()
@@ -98,14 +78,14 @@ func TestGetSingleLogFile(t *testing.T) {
 
 func TestGetMultipleLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareLogDB()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
 
 		Convey("Given a HTTP request for api/x/logFiles", func() {
 			router := httprouter.New()
-			router.GET("/api/x/logFiles", GetAllLogFiles(env))
+			router.GET("/api/x/logFiles", routing.GetAllLogFiles(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
 			resp := httptest.NewRecorder()
@@ -126,7 +106,7 @@ func TestGetMultipleLogFile(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/logFiles?filter=[{\"key\":\"name\", \"value\":\"log1\"}]", func() {
 			router := httprouter.New()
-			router.GET("/api/x/logFiles", GetAllLogFiles(env))
+			router.GET("/api/x/logFiles", routing.GetAllLogFiles(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
 			q := req.URL.Query()
@@ -149,7 +129,7 @@ func TestGetMultipleLogFile(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/logFiles?skip=1", func() {
 			router := httprouter.New()
-			router.GET("/api/x/logFiles", GetAllLogFiles(env))
+			router.GET("/api/x/logFiles", routing.GetAllLogFiles(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
 			q := req.URL.Query()
@@ -174,7 +154,7 @@ func TestGetMultipleLogFile(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/logFiles?limit=1", func() {
 			router := httprouter.New()
-			router.GET("/api/x/logFiles", GetAllLogFiles(env))
+			router.GET("/api/x/logFiles", routing.GetAllLogFiles(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
 			q := req.URL.Query()
@@ -197,7 +177,7 @@ func TestGetMultipleLogFile(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/logFiles?orderBy=[timestamp]", func() {
 			router := httprouter.New()
-			router.GET("/api/x/logFiles", GetAllLogFiles(env))
+			router.GET("/api/x/logFiles", routing.GetAllLogFiles(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
 			q := req.URL.Query()
@@ -222,7 +202,7 @@ func TestGetMultipleLogFile(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/logFiles?orderBy=[timestamp]&reverse=true", func() {
 			router := httprouter.New()
-			router.GET("/api/x/logFiles", GetAllLogFiles(env))
+			router.GET("/api/x/logFiles", routing.GetAllLogFiles(env))
 
 			req := httptest.NewRequest("GET", "/api/x/logFiles", nil)
 			q := req.URL.Query()
@@ -255,7 +235,7 @@ func TestGetMultipleLogFile(t *testing.T) {
 
 func TestCreateLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareLogDB()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
@@ -271,7 +251,7 @@ func TestCreateLogFile(t *testing.T) {
 
 		router := httprouter.New()
 		Convey("Given a HTTP POST request for api/x/logFiles with a valid body", func() {
-			router.POST("/api/x/logFiles", CreateLogFile(env))
+			router.POST("/api/x/logFiles", routing.CreateLogFile(env))
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/logFiles", strings.NewReader(string(requestBody)))
 			resp := httptest.NewRecorder()
@@ -294,7 +274,7 @@ func TestCreateLogFile(t *testing.T) {
 
 		Convey("Given a HTTP POST request for api/x/logFiles with an existing uuid", func() {
 			updateBody.Data.UUID = logFiles[0].UUID
-			router.POST("/api/x/logFiles", CreateLogFile(env))
+			router.POST("/api/x/logFiles", routing.CreateLogFile(env))
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/logFiles", strings.NewReader(string(requestBody)))
 			resp := httptest.NewRecorder()
@@ -317,7 +297,7 @@ func TestCreateLogFile(t *testing.T) {
 		})
 
 		Convey("Given a HTTP POST request for api/x/logFiles with a invalid uuid in body", func() {
-			router.POST("/api/x/logFiles", CreateLogFile(env))
+			router.POST("/api/x/logFiles", routing.CreateLogFile(env))
 			updateBody.Data.UUID = "invalid"
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/logFiles", strings.NewReader(string(requestBody)))
@@ -341,7 +321,7 @@ func TestCreateLogFile(t *testing.T) {
 		})
 
 		Convey("Given a HTTP POST request for api/x/logFiles with a missing name in body", func() {
-			router.POST("/api/x/logFiles", CreateLogFile(env))
+			router.POST("/api/x/logFiles", routing.CreateLogFile(env))
 			updateBody.Data.Name = ""
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/logFiles", strings.NewReader(string(requestBody)))
@@ -368,7 +348,7 @@ func TestCreateLogFile(t *testing.T) {
 
 func TestUpdateLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareLogDB()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
@@ -383,7 +363,7 @@ func TestUpdateLogFile(t *testing.T) {
 
 		router := httprouter.New()
 		Convey("Given a HTTP PUT request for api/x/logFiles/uuid with a valid body", func() {
-			router.PUT("/api/x/logFiles/:uuid", UpdateLogFile(env))
+			router.PUT("/api/x/logFiles/:uuid", routing.UpdateLogFile(env))
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("PUT", "/api/x/logFiles/"+updateBody.Data.UUID, strings.NewReader(string(requestBody)))
 			resp := httptest.NewRecorder()
@@ -406,7 +386,7 @@ func TestUpdateLogFile(t *testing.T) {
 		})
 
 		Convey("Given a HTTP PUT request for api/x/logFiles/uuid with a unknown uid", func() {
-			router.PUT("/api/x/logFiles/:uuid", UpdateLogFile(env))
+			router.PUT("/api/x/logFiles/:uuid", routing.UpdateLogFile(env))
 			updateBody.Data.UUID = "550e8400-e29b-41d4-a716-446655440004"
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("PUT", "/api/x/logFiles/"+updateBody.Data.UUID, strings.NewReader(string(requestBody)))
@@ -430,7 +410,7 @@ func TestUpdateLogFile(t *testing.T) {
 		})
 
 		Convey("Given a HTTP PUT request for api/x/logFiles/uuid with a invalid uuid in the body", func() {
-			router.PUT("/api/x/logFiles/:uuid", UpdateLogFile(env))
+			router.PUT("/api/x/logFiles/:uuid", routing.UpdateLogFile(env))
 			updateBody.Data.UUID = ""
 			requestBody, _ := json.Marshal(updateBody.Data)
 			updateBody.Data.UUID = logFiles[0].UUID
@@ -456,7 +436,7 @@ func TestUpdateLogFile(t *testing.T) {
 		})
 
 		Convey("Given a HTTP PUT request for api/x/logFiles/uuid with a missing name", func() {
-			router.PUT("/api/x/logFiles/:uuid", UpdateLogFile(env))
+			router.PUT("/api/x/logFiles/:uuid", routing.UpdateLogFile(env))
 			updateBody.Data.Name = ""
 
 			requestBody, _ := json.Marshal(updateBody.Data)
@@ -485,13 +465,13 @@ func TestUpdateLogFile(t *testing.T) {
 
 func TestDeleteLogFile(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareLogDB()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
 		router := httprouter.New()
 		Convey("Given a HTTP DELETE request for api/x/logFiles/uuid with a known uuid", func() {
-			router.DELETE("/api/x/logFiles/:uuid", DeleteLogFile(env))
+			router.DELETE("/api/x/logFiles/:uuid", routing.DeleteLogFile(env))
 
 			req := httptest.NewRequest("DELETE", "/api/x/logFiles/"+logFiles[0].UUID, nil)
 			resp := httptest.NewRecorder()
@@ -515,7 +495,7 @@ func TestDeleteLogFile(t *testing.T) {
 		})
 
 		Convey("Given a HTTP DELETE request for api/x/logFiles/uuid with a unknown uuid", func() {
-			router.DELETE("/api/x/logFiles/:uuid", DeleteLogFile(env))
+			router.DELETE("/api/x/logFiles/:uuid", routing.DeleteLogFile(env))
 
 			req := httptest.NewRequest("DELETE", "/api/x/logFiles/unknown", nil)
 			resp := httptest.NewRecorder()
@@ -538,24 +518,4 @@ func TestDeleteLogFile(t *testing.T) {
 			})
 		})
 	})
-}
-
-func prepareLogDB() (string, *storm.DB) {
-	dir := filepath.Join(os.TempDir(), "feconnector-test")
-	os.MkdirAll(dir, os.ModePerm)
-	db, _ := storm.Open(filepath.Join(dir, "storm.db"))
-	os.Mkdir(filepath.Join(dir, "logs"), os.ModePerm)
-	os.Mkdir(filepath.Join(dir, "notes"), os.ModePerm)
-	for _, model := range logFiles {
-		db.Save(&model)
-	}
-	for _, model := range logFiles {
-		logName := model.Name + "-" + time.Unix(model.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
-		f, _ := os.Create(filepath.Join(dir, "logs", logName))
-		f.Close()
-		if model.HasNote {
-			ioutil.WriteFile(filepath.Join(dir, "notes", logName), []byte("test"), os.ModePerm)
-		}
-	}
-	return dir, db
 }

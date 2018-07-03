@@ -1,4 +1,4 @@
-package routing
+package routing_test
 
 import (
 	"encoding/json"
@@ -7,41 +7,29 @@ import (
 	"net/http/httptest"
 	"os"
 	"path"
-	"path/filepath"
-	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/3devo/feconnector/models"
+	"github.com/3devo/feconnector/routing"
 	"github.com/3devo/feconnector/routing/responses"
 
-	b64 "encoding/base64"
-
 	"github.com/3devo/feconnector/utils"
-	"github.com/asdine/storm"
 	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
 	validator "gopkg.in/go-playground/validator.v9"
 )
 
-var charts = []models.Chart{
-	{
-		UUID: "550e8400-e29b-41d4-a716-446655440000"},
-	{
-		UUID: "550e8400-e29b-41d4-a716-446655440001"},
-	{
-		UUID: "550e8400-e29b-41d4-a716-446655440002"}}
-
 func TestGetSingleChart(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareChartDb()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
 		Convey("Given a HTTP request for /api/x/charts/550e8400-e29b-41d4-a716-446655440000", func() {
 
 			router := httprouter.New()
-			router.GET("/api/x/charts/:uuid", GetChart(env))
+			router.GET("/api/x/charts/:uuid", routing.GetChart(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts/550e8400-e29b-41d4-a716-446655440000", nil)
 			resp := httptest.NewRecorder()
@@ -61,7 +49,7 @@ func TestGetSingleChart(t *testing.T) {
 
 		Convey("Given a HTTP request for /api/x/charts/undefined", func() {
 			router := httprouter.New()
-			router.GET("/api/x/charts/:uuid", GetChart(env))
+			router.GET("/api/x/charts/:uuid", routing.GetChart(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts/undefined", nil)
 			resp := httptest.NewRecorder()
@@ -89,14 +77,14 @@ func TestGetSingleChart(t *testing.T) {
 
 func TestGetMultipleCharts(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareChartDb()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
 
 		Convey("Given a HTTP request for api/x/charts", func() {
 			router := httprouter.New()
-			router.GET("/api/x/charts", GetAllCharts(env))
+			router.GET("/api/x/charts", routing.GetAllCharts(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts", nil)
 			resp := httptest.NewRecorder()
@@ -113,7 +101,7 @@ func TestGetMultipleCharts(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/charts?filter=[{\"key\":\"title\", \"value\":\"chart0\"}]", func() {
 			router := httprouter.New()
-			router.GET("/api/x/charts", GetAllCharts(env))
+			router.GET("/api/x/charts", routing.GetAllCharts(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts", nil)
 			q := req.URL.Query()
@@ -135,7 +123,7 @@ func TestGetMultipleCharts(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/charts?skip=1", func() {
 			router := httprouter.New()
-			router.GET("/api/x/charts", GetAllCharts(env))
+			router.GET("/api/x/charts", routing.GetAllCharts(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts", nil)
 			q := req.URL.Query()
@@ -159,7 +147,7 @@ func TestGetMultipleCharts(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/charts?limit=1", func() {
 			router := httprouter.New()
-			router.GET("/api/x/charts", GetAllCharts(env))
+			router.GET("/api/x/charts", routing.GetAllCharts(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts", nil)
 			q := req.URL.Query()
@@ -182,7 +170,7 @@ func TestGetMultipleCharts(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/charts?orderBy=[title]", func() {
 			router := httprouter.New()
-			router.GET("/api/x/charts", GetAllCharts(env))
+			router.GET("/api/x/charts", routing.GetAllCharts(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts", nil)
 			q := req.URL.Query()
@@ -203,7 +191,7 @@ func TestGetMultipleCharts(t *testing.T) {
 
 		Convey("Given a HTTP request for api/x/charts?orderBy=[title]&reverse=true", func() {
 			router := httprouter.New()
-			router.GET("/api/x/charts", GetAllCharts(env))
+			router.GET("/api/x/charts", routing.GetAllCharts(env))
 
 			req := httptest.NewRequest("GET", "/api/x/charts", nil)
 			q := req.URL.Query()
@@ -232,12 +220,12 @@ func TestGetMultipleCharts(t *testing.T) {
 
 func TestCreateChart(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareChartDb()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
 
-		updateBody := &responses.ChartCreationParam{Data: createChart(&charts[0])}
+		updateBody := &responses.ChartCreationParam{Data: CreateChart(&charts[0])}
 		updateBody.Data.UUID = "550e8400-e29b-41d4-a716-446655440003"
 
 		env.Validator.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
@@ -246,7 +234,7 @@ func TestCreateChart(t *testing.T) {
 
 		router := httprouter.New()
 		Convey("Given a HTTP POST request for api/x/charts with a valid body", func() {
-			router.POST("/api/x/charts", CreateChart(env))
+			router.POST("/api/x/charts", routing.CreateChart(env))
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/charts", strings.NewReader(string(requestBody)))
 			resp := httptest.NewRecorder()
@@ -269,7 +257,7 @@ func TestCreateChart(t *testing.T) {
 
 		Convey("Given a HTTP POST request for api/x/charts with an existing uuid", func() {
 			updateBody.Data.UUID = charts[0].UUID
-			router.POST("/api/x/charts", CreateChart(env))
+			router.POST("/api/x/charts", routing.CreateChart(env))
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/charts", strings.NewReader(string(requestBody)))
 			resp := httptest.NewRecorder()
@@ -292,7 +280,7 @@ func TestCreateChart(t *testing.T) {
 		})
 
 		Convey("Given a HTTP POST request for api/x/charts with a invalid uuid in body", func() {
-			router.POST("/api/x/charts", CreateChart(env))
+			router.POST("/api/x/charts", routing.CreateChart(env))
 			updateBody.Data.UUID = "invalid"
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/charts", strings.NewReader(string(requestBody)))
@@ -316,7 +304,7 @@ func TestCreateChart(t *testing.T) {
 		})
 
 		Convey("Given a HTTP POST request for api/x/charts with a missing name in body", func() {
-			router.POST("/api/x/charts", CreateChart(env))
+			router.POST("/api/x/charts", routing.CreateChart(env))
 			updateBody.Data.Title = ""
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("POST", "/api/x/charts", strings.NewReader(string(requestBody)))
@@ -343,7 +331,7 @@ func TestCreateChart(t *testing.T) {
 
 func TestUpdateChart(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareChartDb()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
@@ -351,11 +339,11 @@ func TestUpdateChart(t *testing.T) {
 		env.Validator.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 			return utils.IsValidUUID(fl.Field().String())
 		})
-		updateBody := responses.ChartCreationParam{Data: createChart(&charts[0])}
+		updateBody := responses.ChartCreationParam{Data: CreateChart(&charts[0])}
 
 		router := httprouter.New()
 		Convey("Given a HTTP PUT request for api/x/charts/uuid with a valid body", func() {
-			router.PUT("/api/x/charts/:uuid", UpdateChart(env))
+			router.PUT("/api/x/charts/:uuid", routing.UpdateChart(env))
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("PUT", "/api/x/charts/"+updateBody.Data.UUID, strings.NewReader(string(requestBody)))
 			resp := httptest.NewRecorder()
@@ -378,7 +366,7 @@ func TestUpdateChart(t *testing.T) {
 		})
 
 		Convey("Given a HTTP PUT request for api/x/charts/uuid with a unknown uid", func() {
-			router.PUT("/api/x/charts/:uuid", UpdateChart(env))
+			router.PUT("/api/x/charts/:uuid", routing.UpdateChart(env))
 			updateBody.Data.UUID = "550e8400-e29b-41d4-a716-446655440004"
 			requestBody, _ := json.Marshal(updateBody.Data)
 			req := httptest.NewRequest("PUT", "/api/x/charts/"+updateBody.Data.UUID, strings.NewReader(string(requestBody)))
@@ -402,7 +390,7 @@ func TestUpdateChart(t *testing.T) {
 		})
 
 		Convey("Given a HTTP PUT request for api/x/charts/uuid with a invalid uuid in the body", func() {
-			router.PUT("/api/x/charts/:uuid", UpdateChart(env))
+			router.PUT("/api/x/charts/:uuid", routing.UpdateChart(env))
 			updateBody.Data.UUID = ""
 			requestBody, _ := json.Marshal(updateBody.Data)
 			updateBody.Data.UUID = charts[0].UUID
@@ -428,7 +416,7 @@ func TestUpdateChart(t *testing.T) {
 		})
 
 		Convey("Given a HTTP PUT request for api/x/charts/uuid with a missing name", func() {
-			router.PUT("/api/x/charts/:uuid", UpdateChart(env))
+			router.PUT("/api/x/charts/:uuid", routing.UpdateChart(env))
 			updateBody.Data.Title = ""
 
 			requestBody, _ := json.Marshal(updateBody.Data)
@@ -457,13 +445,13 @@ func TestUpdateChart(t *testing.T) {
 
 func TestDeleteChart(t *testing.T) {
 	Convey("Setup", t, func() {
-		dir, db := prepareChartDb()
+		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
 		router := httprouter.New()
 		Convey("Given a HTTP DELETE request for api/x/charts/uuid with a known uuid", func() {
-			router.DELETE("/api/x/charts/:uuid", DeleteChart(env))
+			router.DELETE("/api/x/charts/:uuid", routing.DeleteChart(env))
 
 			req := httptest.NewRequest("DELETE", "/api/x/charts/"+charts[0].UUID, nil)
 			resp := httptest.NewRecorder()
@@ -487,7 +475,7 @@ func TestDeleteChart(t *testing.T) {
 		})
 
 		Convey("Given a HTTP DELETE request for api/x/charts/uuid with a unknown uuid", func() {
-			router.DELETE("/api/x/charts/:uuid", DeleteChart(env))
+			router.DELETE("/api/x/charts/:uuid", routing.DeleteChart(env))
 
 			req := httptest.NewRequest("DELETE", "/api/x/charts/unknown", nil)
 			resp := httptest.NewRecorder()
@@ -510,42 +498,4 @@ func TestDeleteChart(t *testing.T) {
 			})
 		})
 	})
-}
-
-func prepareChartDb() (string, *storm.DB) {
-	dir := filepath.Join(os.TempDir(), "feconnector-test")
-	os.MkdirAll(dir, os.ModePerm)
-	db, _ := storm.Open(filepath.Join(dir, "storm.db"))
-
-	for i, _ := range charts {
-		charts[i] = createChart(&charts[i])
-		charts[i].Title = "chart" + strconv.Itoa(i)
-		db.Save(&charts[i])
-	}
-	return dir, db
-}
-
-func createChart(chart *models.Chart) models.Chart {
-	chart.Title = "test"
-	chart.PlotDataInformation = []models.PlotDataInformation{
-		{
-			DataName: "dataName",
-			PlotName: "plotName",
-			Color:    "#4286f4",
-			Axis:     ""}}
-	chart.Axes = []models.Axis{
-		{
-			Name:  "xaxis",
-			Title: "title",
-			Range: []int{0},
-		},
-		{
-			Name:  "yaxis",
-			Title: "title",
-			Range: []int{0, 2000}}}
-
-	chart.HorizontalRulers = []models.Ruler{}
-	chart.VerticalRulers = []models.Ruler{}
-	chart.Image = b64.StdEncoding.EncodeToString([]byte("test"))
-	return *chart
 }
