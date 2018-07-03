@@ -2,14 +2,15 @@ package routing
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/routing/responses"
 	"github.com/3devo/feconnector/utils"
 	"github.com/julienschmidt/httprouter"
+	"github.com/tidwall/gjson"
 )
 
 // swagger:route GET /sheets Sheets GetAllSheets
@@ -81,8 +82,9 @@ func GetSheet(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func CreateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.SheetCreationParams
+		var validation responses.SheetCreationParam
 		body, _ := ioutil.ReadAll(r.Body)
+		data := gjson.Parse(string(body))
 		json.Unmarshal(body, &validation.Data)
 		err := env.Validator.Struct(validation)
 		if err != nil {
@@ -91,6 +93,15 @@ func CreateSheet(env *utils.Env) httprouter.Handle {
 				"Sheets",
 				"CREATE",
 				err.Error(),
+				w)
+			return
+		}
+		if env.Db.One("UUID", data.Get("uuid").String(), &models.Sheet{}) == nil {
+			responses.WriteResourceStatusResponse(
+				http.StatusInternalServerError,
+				"Sheets",
+				"CREATE",
+				fmt.Sprintf("Sheet with %v already exists", data.Get("uuid").String()),
 				w)
 			return
 		}
@@ -127,7 +138,7 @@ func CreateSheet(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func UpdateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.SheetCreationParams
+		var validation responses.SheetCreationParam
 		body, _ := ioutil.ReadAll(r.Body)
 		uuid := ps.ByName("uuid")
 		json.Unmarshal(body, &validation.Data)
@@ -143,8 +154,12 @@ func UpdateSheet(env *utils.Env) httprouter.Handle {
 		}
 		err = env.Db.One("UUID", uuid, &models.Sheet{})
 		if err != nil {
-			log.Println(err)
-			http.Error(w, http.StatusText(http.StatusNotFound), http.StatusNotFound)
+			responses.WriteResourceStatusResponse(
+				http.StatusNotFound,
+				"Sheets",
+				"UPDATE",
+				err.Error(),
+				w)
 			return
 		}
 		err = env.Db.Update(&validation.Data)

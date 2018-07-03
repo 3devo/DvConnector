@@ -19,7 +19,7 @@ type SheetResponse struct {
 
 // Parameters needed to create a sheet object
 // swagger:parameters CreateSheet UpdateSheet
-type SheetCreationParams struct {
+type SheetCreationParam struct {
 	//in:body
 	Data models.Sheet `json:"data"`
 }
