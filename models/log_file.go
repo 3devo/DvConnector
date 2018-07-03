@@ -29,14 +29,13 @@ func CreateLogFile(uuid string, name string, note string, env *utils.Env) error 
 	if note != "" {
 		logFile.HasNote = true
 	}
-	logName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
-	f, err := os.Create(filepath.Join(env.FileDir, "logs", logName))
+	f, err := os.Create(filepath.Join(env.FileDir, "logs", logFile.GetFileName()))
 	f.Close()
 	if err != nil {
 		return err
 	}
 	if logFile.HasNote {
-		err := ioutil.WriteFile(filepath.Join(env.FileDir, "notes", logName), []byte(note), os.ModePerm)
+		err := ioutil.WriteFile(filepath.Join(env.FileDir, "notes", logFile.GetFileName()), []byte(note), os.ModePerm)
 		if err != nil {
 			return err
 		}
@@ -49,10 +48,9 @@ func CreateLogFile(uuid string, name string, note string, env *utils.Env) error 
 
 // UpdateLogFile updates the name and notes
 func (logFile *LogFile) UpdateLogFile(name string, note string, env *utils.Env) error {
-	logName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
 	logFile.Name = name
 	if note != "" {
-		ioutil.WriteFile(filepath.Join(env.FileDir, "notes", logName), []byte(note), os.ModePerm)
+		ioutil.WriteFile(filepath.Join(env.FileDir, "notes", logFile.GetFileName()), []byte(note), os.ModePerm)
 	}
 	err := env.Db.Update(logFile)
 	if err != nil {
@@ -62,29 +60,29 @@ func (logFile *LogFile) UpdateLogFile(name string, note string, env *utils.Env) 
 }
 
 // AppendLog appends new information to an already existing log file.
-func (logFile *LogFile) AppendLog(log string, env *utils.Env) {
-	logName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
-
-	if log != "" {
-		f, err := os.OpenFile(filepath.Join(env.FileDir, "logs", logName), os.O_APPEND, os.ModePerm)
+func (logFile *LogFile) AppendLog(logData string, env *utils.Env) error {
+	if logData != "" {
+		f, err := os.OpenFile(filepath.Join(env.FileDir, "logs", logFile.GetFileName()), os.O_APPEND, os.ModePerm)
 		if err == nil {
-			f.WriteString(log)
+			f.WriteString(logData)
+			f.Sync()
 		}
 		f.Close()
+		return err
 	}
+	return nil
 }
 
 // DeleteLogFile
 func (logFile *LogFile) DeleteLogFile(env *utils.Env) error {
-	logName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
-	err := os.Remove(filepath.Join(env.FileDir, "logs", logName))
+	err := os.Remove(filepath.Join(env.FileDir, "logs", logFile.GetFileName()))
 
 	if err != nil {
 		return err
 	}
 
 	if logFile.HasNote {
-		err = os.Remove(filepath.Join(env.FileDir, "notes", logName))
+		err = os.Remove(filepath.Join(env.FileDir, "notes", logFile.GetFileName()))
 		if err != nil {
 			return err
 		}
@@ -94,4 +92,8 @@ func (logFile *LogFile) DeleteLogFile(env *utils.Env) error {
 		return err
 	}
 	return nil
+}
+
+func (logFile *LogFile) GetFileName() string {
+	return logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
 }

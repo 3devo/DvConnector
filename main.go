@@ -114,10 +114,7 @@ var (
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 	db, _    = storm.Open("feconnector.db")
 	validate = validator.New()
-
-	ErrFileConflict = errors.New("File already exists")
-	ErrFileInternal = errors.New("Internal")
-	ErrFileNotFound = errors.New("File not found")
+	env      = &utils.Env{Db: db, Validator: validate, FileDir: *files}
 )
 
 type NullWriter int
@@ -171,7 +168,6 @@ func main() {
 		return true
 	})
 
-	env := &utils.Env{Db: db, Validator: validate, FileDir: *files}
 	// Test USB list
 	//	GetUsbList()
 

@@ -3,11 +3,12 @@ package main
 import (
 	"encoding/json"
 	"log"
-	"os"
 	"regexp"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/3devo/feconnector/models"
 )
 
 type Bufferflow3Devo struct {
@@ -48,13 +49,13 @@ func (b *Bufferflow3Devo) Init() {
 	b.manualLock = &sync.Mutex{}
 	b.Input = make(chan string)
 	b.BufferMax = 2
-	t := time.Now()
-	logPath := "./logs"
-	os.MkdirAll(logPath, os.ModePerm)
-	f, err := os.Create(logPath + "/LOG-" + t.Format("2006-01-02-15-04-05") + ".txt")
-	check(err)
+	query := db.Select().Limit(1).OrderBy("Timestamp").Reverse()
+	var logFile = models.LogFile{}
+	err := query.First(&logFile)
+	if err != nil {
+		log.Fatal("Cannot find logfile")
+	}
 	go func() {
-		defer f.Close()
 		for data := range b.Input {
 
 			//log.Printf("Got to b.Input chan loop. data:%v\n", data)
@@ -148,8 +149,10 @@ func (b *Bufferflow3Devo) Init() {
 				m := DataPerLine{b.Port, element + "\n"}
 				bm, err := json.Marshal(m)
 				if err == nil {
-					f.WriteString(m.D)
-					f.Sync()
+					err := logFile.AppendLog(m.D, env)
+					if err != nil {
+						log.Fatalf("Can't write to log file -> %v", logFile.GetFileName())
+					}
 					h.broadcastSys <- bm
 				}
 
