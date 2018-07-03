@@ -1,9 +1,8 @@
 package responses
 
 import (
-	"fmt"
 	"io/ioutil"
-	"time"
+	"path/filepath"
 
 	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/utils"
@@ -41,14 +40,13 @@ func GenerateLogResponse(logFile *models.LogFile, env *utils.Env) *LogFileRespon
 	response.Name = logFile.Name
 	response.Timestamp = logFile.Timestamp
 	response.UUID = logFile.UUID
-	logName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
-	logData, err := ioutil.ReadFile(fmt.Sprintf("./%v/%v", "logs", logName)) // just pass the file name
 
+	logData, err := ioutil.ReadFile(filepath.Join(env.FileDir, "logs", logFile.GetFileName())) // just pass the file name
 	if err == nil {
 		response.Log = string(logData)
 	}
 	if logFile.HasNote {
-		note, err := ioutil.ReadFile(fmt.Sprintf("./%v/%v", "notes", logName)) // just pass the file name
+		note, err := ioutil.ReadFile(filepath.Join(env.FileDir, "notes", logFile.GetFileName())) // just pass the file name
 		if err == nil {
 			response.Note = string(note)
 		}
