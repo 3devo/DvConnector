@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http/httptest"
 	"os"
 	"path"
@@ -108,9 +107,6 @@ func TestGetMultipleCharts(t *testing.T) {
 				expected, _ := json.Marshal(&charts)
 
 				So(result.StatusCode, ShouldEqual, 200)
-				log.Println(string(body))
-				log.Println("*****")
-				log.Println(string(expected))
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
