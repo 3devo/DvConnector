@@ -27,14 +27,11 @@ import (
 func GetAllWorkspaces(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		workspaces := make([]models.Workspace, 0)
-		responseObject := make([]*responses.WorkspaceResponse, 0)
 		query, _ := utils.QueryBuilder(env, r)
+
 		query.Find(&workspaces)
-		for _, workspace := range workspaces {
-			responseObject = append(responseObject, responses.GenerateWorkspaceResponseObject(&workspace, env))
-		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(responseObject)
+		json.NewEncoder(w).Encode(workspaces)
 	}
 }
 
@@ -195,7 +192,7 @@ func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func DeleteWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var workspace models.Sheet
+		var workspace models.Workspace
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &workspace)
 		if err != nil {

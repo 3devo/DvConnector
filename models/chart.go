@@ -19,6 +19,7 @@ type Ruler struct {
 	Color string `json:"color" validate:"hexcolor"`
 }
 
+// Chart with the needed properties to generate a chart in the frontend
 // swagger:model Chart
 type Chart struct {
 	UUID                string                `storm:"id" json:"uuid" validate:"uuid"`

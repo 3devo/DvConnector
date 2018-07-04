@@ -27,14 +27,11 @@ import (
 func GetAllSheets(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		sheets := make([]models.Sheet, 0)
-		responseObject := make([]*responses.SheetResponse, 0)
 		query, _ := utils.QueryBuilder(env, r)
+
 		query.Find(&sheets)
-		for _, sheet := range sheets {
-			responseObject = append(responseObject, responses.GenerateSheetResponseObject(&sheet, env))
-		}
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(responseObject)
+		json.NewEncoder(w).Encode(sheets)
 	}
 }
 

@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/routing"
 	"github.com/3devo/feconnector/routing/responses"
 
@@ -91,11 +92,7 @@ func TestGetMultipleSheets(t *testing.T) {
 			Convey("Then the response should return 200 with the 3 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.SheetResponse, 0)
-				for _, model := range sheets {
-					responseBody = append(responseBody, responses.GenerateSheetResponseObject(&model, env))
-				}
-				expected, _ := json.Marshal(responseBody)
+				expected, _ := json.Marshal(sheets)
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
 			})
@@ -115,8 +112,7 @@ func TestGetMultipleSheets(t *testing.T) {
 			Convey("Then the response should return 200 with the 1 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				expected, _ := json.Marshal([]*responses.SheetResponse{responses.GenerateSheetResponseObject(&sheets[0], env)})
-
+				expected, _ := json.Marshal([]models.Sheet{sheets[0]})
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
 			})
@@ -136,11 +132,7 @@ func TestGetMultipleSheets(t *testing.T) {
 			Convey("Then the response should return 200 with the 2 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.SheetResponse, 0)
-				for _, model := range sheets[1:] {
-					responseBody = append(responseBody, responses.GenerateSheetResponseObject(&model, env))
-				}
-				expected, _ := json.Marshal(responseBody)
+				expected, _ := json.Marshal(sheets[1:])
 
 				So(result.StatusCode, ShouldEqual, 200)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
@@ -161,7 +153,7 @@ func TestGetMultipleSheets(t *testing.T) {
 			Convey("Then the response should return 200 with the 2 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				expected, _ := json.Marshal([]*responses.SheetResponse{responses.GenerateSheetResponseObject(&sheets[0], env)})
+				expected, _ := json.Marshal([]models.Sheet{sheets[0]})
 
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
@@ -182,11 +174,7 @@ func TestGetMultipleSheets(t *testing.T) {
 			Convey("Then the response should return 200 with the 3 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.SheetResponse, 0)
-				for _, model := range sheets {
-					responseBody = append(responseBody, responses.GenerateSheetResponseObject(&model, env))
-				}
-				expected, _ := json.Marshal(responseBody)
+				expected, _ := json.Marshal(sheets)
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
 			})
@@ -207,14 +195,10 @@ func TestGetMultipleSheets(t *testing.T) {
 			Convey("Then the response should return 200 with the 3 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.SheetResponse, 0)
-				for _, model := range sheets {
-					responseBody = append(responseBody, responses.GenerateSheetResponseObject(&model, env))
-				}
-				reversed := [3]*responses.SheetResponse{
-					responseBody[2],
-					responseBody[1],
-					responseBody[0],
+				reversed := [3]models.Sheet{
+					sheets[2],
+					sheets[1],
+					sheets[0],
 				}
 				expected, _ := json.Marshal(reversed)
 				So(result.StatusCode, ShouldEqual, 200)

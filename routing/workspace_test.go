@@ -10,6 +10,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/routing"
 	"github.com/3devo/feconnector/routing/responses"
 
@@ -91,11 +92,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 			Convey("Then the response should return 200 with the 3 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.WorkspaceResponse, 0)
-				for _, model := range workspaces {
-					responseBody = append(responseBody, responses.GenerateWorkspaceResponseObject(&model, env))
-				}
-				expected, _ := json.Marshal(responseBody)
+				expected, _ := json.Marshal(workspaces)
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
 			})
@@ -115,7 +112,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 			Convey("Then the response should return 200 with the 1 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				expected, _ := json.Marshal([]*responses.WorkspaceResponse{responses.GenerateWorkspaceResponseObject(&workspaces[0], env)})
+				expected, _ := json.Marshal([]models.Workspace{workspaces[0]})
 
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
@@ -136,11 +133,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 			Convey("Then the response should return 200 with the 2 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.WorkspaceResponse, 0)
-				for _, model := range workspaces[1:] {
-					responseBody = append(responseBody, responses.GenerateWorkspaceResponseObject(&model, env))
-				}
-				expected, _ := json.Marshal(responseBody)
+				expected, _ := json.Marshal(workspaces[1:])
 
 				So(result.StatusCode, ShouldEqual, 200)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
@@ -161,7 +154,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 			Convey("Then the response should return 200 with the 2 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				expected, _ := json.Marshal([]*responses.WorkspaceResponse{responses.GenerateWorkspaceResponseObject(&workspaces[0], env)})
+				expected, _ := json.Marshal([]models.Workspace{workspaces[0]})
 
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
@@ -182,11 +175,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 			Convey("Then the response should return 200 with the 3 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.WorkspaceResponse, 0)
-				for _, model := range workspaces {
-					responseBody = append(responseBody, responses.GenerateWorkspaceResponseObject(&model, env))
-				}
-				expected, _ := json.Marshal(responseBody)
+				expected, _ := json.Marshal(workspaces)
 				So(result.StatusCode, ShouldEqual, 200)
 				So(body, ShouldResemble, append(expected, 10))
 			})
@@ -207,14 +196,10 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 			Convey("Then the response should return 200 with the 3 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				responseBody := make([]*responses.WorkspaceResponse, 0)
-				for _, model := range workspaces {
-					responseBody = append(responseBody, responses.GenerateWorkspaceResponseObject(&model, env))
-				}
-				reversed := [3]*responses.WorkspaceResponse{
-					responseBody[2],
-					responseBody[1],
-					responseBody[0],
+				reversed := [3]models.Workspace{
+					workspaces[2],
+					workspaces[1],
+					workspaces[0],
 				}
 				expected, _ := json.Marshal(reversed)
 				So(result.StatusCode, ShouldEqual, 200)
