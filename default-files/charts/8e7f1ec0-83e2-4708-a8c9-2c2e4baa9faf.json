@@ -1,6 +1,6 @@
 {
     "title": "Free mem",
-    "id": "8e7f1ec0-83e2-4708-a8c9-2c2e4baa9faf",
+    "uuid": "8e7f1ec0-83e2-4708-a8c9-2c2e4baa9faf",
     "plotDataInformation": [
         {
             "dataName": "MemFree",

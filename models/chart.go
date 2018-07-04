@@ -1,9 +1,11 @@
 package models
 
 type Axis struct {
-	Name  string `json:"name" validate:"required"`
-	Title string `json:"title" validate:"required"`
-	Range []int  `json:"range" validate:"min=1"`
+	Name       string `json:"name" validate:"required"`
+	Title      string `json:"title" validate:"required"`
+	Range      []int  `json:"range" validate:"min=1"`
+	Side       string `json:"side"`
+	Overlaying string `json:"overlaying" validate:"oneof y x"`
 }
 
 type PlotDataInformation struct {
@@ -28,5 +30,5 @@ type Chart struct {
 	Axes                []Axis                `json:"axes"`
 	HorizontalRulers    []Ruler               `json:"horizontalRulers"`
 	VerticalRulers      []Ruler               `json:"verticalRulers"`
-	Image               string                `json:"image" validate:"base64"`
+	Image               string                `json:"image" validate:"datauri"`
 }

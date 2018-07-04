@@ -1,6 +1,6 @@
 {
     "title": "Extruder RPM",
-    "id": "9406fcbc-db92-4b70-ba7b-4882bf43301d",
+    "uuid": "9406fcbc-db92-4b70-ba7b-4882bf43301d",
     "plotDataInformation": [
         {
             "dataName": "RPM",

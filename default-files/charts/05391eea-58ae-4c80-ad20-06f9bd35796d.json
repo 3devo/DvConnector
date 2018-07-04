@@ -1,6 +1,6 @@
 {
     "title": "Heater 1: temperature, setpoint and duty cycle combined",
-    "id": "05391eea-58ae-4c80-ad20-06f9bd35796d",
+    "uuid": "05391eea-58ae-4c80-ad20-06f9bd35796d",
     "plotDataInformation": [
         {
             "dataName": "SetT1",
