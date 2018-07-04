@@ -112,9 +112,9 @@ var (
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
-	db, _    = storm.Open("feconnector.db")
+	db       *storm.DB
 	validate = validator.New()
-	env      = &utils.Env{Db: db, Validator: validate, FileDir: *files}
+	env      *utils.Env
 )
 
 type NullWriter int
@@ -137,14 +137,23 @@ func launchSelfLater() {
 }
 
 func main() {
+	newDatabase := false
+	if _, err := os.Stat("feconnector.db"); os.IsNotExist(err) {
+		newDatabase = true
+	}
+	db, _ = storm.Open("feconnector.db")
 	os.MkdirAll(filepath.Join(*files, "logs"), os.ModePerm)
 	os.MkdirAll(filepath.Join(*files, "notes"), os.ModePerm)
 	db.Init(&models.Workspace{})
 	db.Init(&models.Sheet{})
 	db.Init(&models.Chart{})
 	db.Init(&models.LogFile{})
+	if newDatabase {
+		log.Println("filling database with default values")
+		FillDatabase(db)
+	}
 	defer db.Close()
-
+	env = &utils.Env{Db: db, Validator: validate, FileDir: *files}
 	/** Custom validators **/
 	validate.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 		return utils.IsValidUUID(fl.Field().String())
