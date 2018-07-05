@@ -9,12 +9,6 @@ import (
 	"github.com/asdine/storm"
 )
 
-var devoCharts = []models.Chart{}
-
-var devoSheets = []models.Sheet{}
-
-var devoWorkspaces = []models.Workspace{}
-
 func FillDatabase(Db *storm.DB) {
 	defaultDir := "./default-files"
 	charts, _ := ioutil.ReadDir(filepath.Join(defaultDir, "charts"))

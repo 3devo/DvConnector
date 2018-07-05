@@ -17,6 +17,7 @@ type PlotDataInformation struct {
 
 type Ruler struct {
 	Text  string `json:"text" validate:"required"`
+	Y     string `json:"y" validate:"required"`
 	Width int    `json:"width" validate:"required"`
 	Color string `json:"color" validate:"hexcolor"`
 }
