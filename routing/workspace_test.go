@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
@@ -37,11 +38,11 @@ func TestGetSingleWorkspace(t *testing.T) {
 			Convey("When the request is handled by the Router", func() {
 				router.ServeHTTP(resp, req)
 
-				Convey("Then the response should be a 200 because the item exists in the db", func() {
+				Convey("Then the response should be a http.StatusOK because the item exists in the db", func() {
 					result := resp.Result()
 					body, _ := ioutil.ReadAll(result.Body)
 					expected, _ := json.Marshal(responses.GenerateWorkspaceResponseObject(&workspaces[0], env))
-					So(result.StatusCode, ShouldEqual, 200)
+					So(result.StatusCode, ShouldEqual, http.StatusOK)
 					So(body, ShouldResemble, append(expected, 10))
 				})
 			})
@@ -57,17 +58,17 @@ func TestGetSingleWorkspace(t *testing.T) {
 			Convey("When the request is handled by the Router", func() {
 				router.ServeHTTP(resp, req)
 
-				Convey("Then the response should be a 404 with correct response body", func() {
+				Convey("Then the response should be a http.StatusNotFound with correct response body", func() {
 					result := resp.Result()
 					body, _ := ioutil.ReadAll(result.Body)
 					response := responses.ResourceStatusResponse{}
-					response.Body.Code = 404
+					response.Body.Code = http.StatusNotFound
 					response.Body.Resource = "Workspaces"
 					response.Body.Action = "GET"
 					response.Body.Error = "not found"
 					expected, _ := json.Marshal(response.Body)
 
-					So(result.StatusCode, ShouldEqual, 404)
+					So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 					So(string(body), ShouldResemble, string(append(expected, 10)))
 				})
 			})
@@ -89,11 +90,11 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/x/workspaces", nil)
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 workspaces", func() {
+			Convey("Then the response should return http.StatusOK with the 3 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(workspaces)
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -109,12 +110,12 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 1 workspaces", func() {
+			Convey("Then the response should return http.StatusOK with the 1 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal([]models.Workspace{workspaces[0]})
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -130,12 +131,12 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 2 workspaces", func() {
+			Convey("Then the response should return http.StatusOK with the 2 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(workspaces[1:])
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -151,12 +152,12 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 2 workspaces", func() {
+			Convey("Then the response should return http.StatusOK with the 2 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal([]models.Workspace{workspaces[0]})
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -172,11 +173,11 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 workspaces", func() {
+			Convey("Then the response should return http.StatusOK with the 3 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(workspaces)
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -193,7 +194,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 workspaces", func() {
+			Convey("Then the response should return http.StatusOK with the 3 workspaces", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				reversed := [3]models.Workspace{
@@ -202,7 +203,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 					workspaces[0],
 				}
 				expected, _ := json.Marshal(reversed)
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -237,13 +238,13 @@ func TestCreateWorkspace(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "CREATE"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 			})
 		})
 
@@ -263,13 +264,13 @@ func TestCreateWorkspace(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "CREATE"
 				response.Body.Error = fmt.Sprintf("Workspace with %v already exists", updateBody.Data.UUID)
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -290,13 +291,13 @@ func TestCreateWorkspace(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'WorkspaceCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -314,13 +315,13 @@ func TestCreateWorkspace(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'WorkspaceCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -342,13 +343,13 @@ func TestCreateWorkspace(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'WorkspaceCreationBody.Data.Sheets[0]' Error:Field validation for 'Sheets[0]' failed on the 'sheet-exists' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -383,13 +384,13 @@ func TestUpdateWorkspace(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = ""
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -407,13 +408,13 @@ func TestUpdateWorkspace(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 404
+				response.Body.Code = http.StatusNotFound
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "not found"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 404)
+				So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -433,14 +434,14 @@ func TestUpdateWorkspace(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'WorkspaceCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 			})
 		})
 
@@ -459,13 +460,13 @@ func TestUpdateWorkspace(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'WorkspaceCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -489,13 +490,13 @@ func TestUpdateWorkspace(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'WorkspaceCreationBody.Data.Sheets[0]' Error:Field validation for 'Sheets[0]' failed on the 'sheet-exists' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -522,13 +523,13 @@ func TestDeleteWorkspace(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "DELETE"
 				response.Body.Error = ""
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -546,13 +547,13 @@ func TestDeleteWorkspace(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 404
+				response.Body.Code = http.StatusNotFound
 				response.Body.Resource = "Workspaces"
 				response.Body.Action = "DELETE"
 				response.Body.Error = "not found"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 404)
+				So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})

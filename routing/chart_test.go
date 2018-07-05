@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
@@ -37,11 +38,11 @@ func TestGetSingleChart(t *testing.T) {
 			Convey("When the request is handled by the Router", func() {
 				router.ServeHTTP(resp, req)
 
-				Convey("Then the response should be a 200 because the item exists in the db", func() {
+				Convey("Then the response should be a http.StatusOK because the item exists in the db", func() {
 					result := resp.Result()
 					body, _ := ioutil.ReadAll(result.Body)
 					expected, _ := json.Marshal(charts[0])
-					So(result.StatusCode, ShouldEqual, 200)
+					So(result.StatusCode, ShouldEqual, http.StatusOK)
 					So(body, ShouldResemble, append(expected, 10))
 				})
 			})
@@ -57,17 +58,17 @@ func TestGetSingleChart(t *testing.T) {
 			Convey("When the request is handled by the Router", func() {
 				router.ServeHTTP(resp, req)
 
-				Convey("Then the response should be a 404 with correct response body", func() {
+				Convey("Then the response should be a http.StatusNotFound with correct response body", func() {
 					result := resp.Result()
 					body, _ := ioutil.ReadAll(result.Body)
 					response := responses.ResourceStatusResponse{}
-					response.Body.Code = 404
+					response.Body.Code = http.StatusNotFound
 					response.Body.Resource = "Charts"
 					response.Body.Action = "GET"
 					response.Body.Error = "not found"
 					expected, _ := json.Marshal(response.Body)
 
-					So(result.StatusCode, ShouldEqual, 404)
+					So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 					So(string(body), ShouldResemble, string(append(expected, 10)))
 				})
 			})
@@ -89,12 +90,12 @@ func TestGetMultipleCharts(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/x/charts", nil)
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 charts", func() {
+			Convey("Then the response should return http.StatusOK with the 3 charts", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(&charts)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -110,13 +111,13 @@ func TestGetMultipleCharts(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 1 charts", func() {
+			Convey("Then the response should return http.StatusOK with the 1 charts", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				responseBody := []*models.Chart{&charts[0]}
 				expected, _ := json.Marshal(responseBody)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -132,7 +133,7 @@ func TestGetMultipleCharts(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 2 charts", func() {
+			Convey("Then the response should return http.StatusOK with the 2 charts", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				var responseBody = []*models.Chart{
@@ -140,7 +141,7 @@ func TestGetMultipleCharts(t *testing.T) {
 					&charts[2]}
 				expected, _ := json.Marshal(responseBody)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -156,14 +157,14 @@ func TestGetMultipleCharts(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 2 charts", func() {
+			Convey("Then the response should return http.StatusOK with the 2 charts", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				var responseBody = []*models.Chart{
 					&charts[0]}
 				expected, _ := json.Marshal(responseBody)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -179,12 +180,12 @@ func TestGetMultipleCharts(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 charts", func() {
+			Convey("Then the response should return http.StatusOK with the 3 charts", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(charts)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -201,7 +202,7 @@ func TestGetMultipleCharts(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 charts", func() {
+			Convey("Then the response should return http.StatusOK with the 3 charts", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				reversed := [3]*models.Chart{
@@ -211,7 +212,7 @@ func TestGetMultipleCharts(t *testing.T) {
 				}
 				expected, _ := json.Marshal(reversed)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -245,13 +246,13 @@ func TestCreateChart(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Charts"
 				response.Body.Action = "CREATE"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 			})
 		})
 
@@ -268,13 +269,13 @@ func TestCreateChart(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Charts"
 				response.Body.Action = "CREATE"
 				response.Body.Error = fmt.Sprintf("Chart with %v already exists", updateBody.Data.UUID)
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -292,13 +293,13 @@ func TestCreateChart(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Charts"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'ChartCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -316,13 +317,13 @@ func TestCreateChart(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Charts"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'ChartCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -354,13 +355,13 @@ func TestUpdateChart(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Charts"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = ""
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -378,13 +379,13 @@ func TestUpdateChart(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 404
+				response.Body.Code = http.StatusNotFound
 				response.Body.Resource = "Charts"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "not found"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 404)
+				So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -404,14 +405,14 @@ func TestUpdateChart(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Charts"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'ChartCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 			})
 		})
 
@@ -430,13 +431,13 @@ func TestUpdateChart(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Charts"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'ChartCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -463,13 +464,13 @@ func TestDeleteChart(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Charts"
 				response.Body.Action = "DELETE"
 				response.Body.Error = ""
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -487,13 +488,13 @@ func TestDeleteChart(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 404
+				response.Body.Code = http.StatusNotFound
 				response.Body.Resource = "Charts"
 				response.Body.Action = "DELETE"
 				response.Body.Error = "not found"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 404)
+				So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})

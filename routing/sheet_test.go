@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net/http"
 	"net/http/httptest"
 	"os"
 	"path"
@@ -37,11 +38,11 @@ func TestGetSingleSheet(t *testing.T) {
 			Convey("When the request is handled by the Router", func() {
 				router.ServeHTTP(resp, req)
 
-				Convey("Then the response should be a 200 because the item exists in the db", func() {
+				Convey("Then the response should be a http.StatusOK because the item exists in the db", func() {
 					result := resp.Result()
 					body, _ := ioutil.ReadAll(result.Body)
 					expected, _ := json.Marshal(responses.GenerateSheetResponseObject(&sheets[0], env))
-					So(result.StatusCode, ShouldEqual, 200)
+					So(result.StatusCode, ShouldEqual, http.StatusOK)
 					So(body, ShouldResemble, append(expected, 10))
 				})
 			})
@@ -57,17 +58,17 @@ func TestGetSingleSheet(t *testing.T) {
 			Convey("When the request is handled by the Router", func() {
 				router.ServeHTTP(resp, req)
 
-				Convey("Then the response should be a 404 with correct response body", func() {
+				Convey("Then the response should be a http.StatusNotFound with correct response body", func() {
 					result := resp.Result()
 					body, _ := ioutil.ReadAll(result.Body)
 					response := responses.ResourceStatusResponse{}
-					response.Body.Code = 404
+					response.Body.Code = http.StatusNotFound
 					response.Body.Resource = "Sheets"
 					response.Body.Action = "GET"
 					response.Body.Error = "not found"
 					expected, _ := json.Marshal(response.Body)
 
-					So(result.StatusCode, ShouldEqual, 404)
+					So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 					So(string(body), ShouldResemble, string(append(expected, 10)))
 				})
 			})
@@ -89,11 +90,11 @@ func TestGetMultipleSheets(t *testing.T) {
 			req := httptest.NewRequest("GET", "/api/x/sheets", nil)
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 sheets", func() {
+			Convey("Then the response should return http.StatusOK with the 3 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(sheets)
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -109,11 +110,11 @@ func TestGetMultipleSheets(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 1 sheets", func() {
+			Convey("Then the response should return http.StatusOK with the 1 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal([]models.Sheet{sheets[0]})
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -129,12 +130,12 @@ func TestGetMultipleSheets(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 2 sheets", func() {
+			Convey("Then the response should return http.StatusOK with the 2 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(sheets[1:])
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -150,12 +151,12 @@ func TestGetMultipleSheets(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 2 sheets", func() {
+			Convey("Then the response should return http.StatusOK with the 2 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal([]models.Sheet{sheets[0]})
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -171,11 +172,11 @@ func TestGetMultipleSheets(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 sheets", func() {
+			Convey("Then the response should return http.StatusOK with the 3 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				expected, _ := json.Marshal(sheets)
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -192,7 +193,7 @@ func TestGetMultipleSheets(t *testing.T) {
 
 			resp := httptest.NewRecorder()
 			router.ServeHTTP(resp, req)
-			Convey("Then the response should return 200 with the 3 sheets", func() {
+			Convey("Then the response should return http.StatusOK with the 3 sheets", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				reversed := [3]models.Sheet{
@@ -201,7 +202,7 @@ func TestGetMultipleSheets(t *testing.T) {
 					sheets[0],
 				}
 				expected, _ := json.Marshal(reversed)
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(body, ShouldResemble, append(expected, 10))
 			})
 		})
@@ -236,13 +237,13 @@ func TestCreateSheet(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 			})
 		})
 
@@ -262,13 +263,13 @@ func TestCreateSheet(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
 				response.Body.Error = fmt.Sprintf("Sheet with %v already exists", updateBody.Data.UUID)
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -289,13 +290,13 @@ func TestCreateSheet(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'SheetCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -313,13 +314,13 @@ func TestCreateSheet(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'SheetCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -341,13 +342,13 @@ func TestCreateSheet(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "CREATE"
 				response.Body.Error = "Key: 'SheetCreationBody.Data.Charts[0]' Error:Field validation for 'Charts[0]' failed on the 'chart-exists' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -382,13 +383,13 @@ func TestUpdateSheet(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = ""
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -406,13 +407,13 @@ func TestUpdateSheet(t *testing.T) {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 404
+				response.Body.Code = http.StatusNotFound
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "not found"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 404)
+				So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -432,14 +433,14 @@ func TestUpdateSheet(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'SheetCreationBody.Data.UUID' Error:Field validation for 'UUID' failed on the 'uuid' tag"
 				expected, _ := json.Marshal(response.Body)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 			})
 		})
 
@@ -458,13 +459,13 @@ func TestUpdateSheet(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'SheetCreationBody.Data.Title' Error:Field validation for 'Title' failed on the 'required' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -488,13 +489,13 @@ func TestUpdateSheet(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 500
+				response.Body.Code = http.StatusInternalServerError
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "UPDATE"
 				response.Body.Error = "Key: 'SheetCreationBody.Data.Charts[0]' Error:Field validation for 'Charts[0]' failed on the 'chart-exists' tag"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 500)
+				So(result.StatusCode, ShouldEqual, http.StatusInternalServerError)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -521,13 +522,13 @@ func TestDeleteSheet(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 200
+				response.Body.Code = http.StatusOK
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "DELETE"
 				response.Body.Error = ""
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 200)
+				So(result.StatusCode, ShouldEqual, http.StatusOK)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
@@ -545,13 +546,13 @@ func TestDeleteSheet(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				response := responses.ResourceStatusResponse{}
-				response.Body.Code = 404
+				response.Body.Code = http.StatusNotFound
 				response.Body.Resource = "Sheets"
 				response.Body.Action = "DELETE"
 				response.Body.Error = "not found"
 				expected, _ := json.Marshal(response.Body)
 
-				So(result.StatusCode, ShouldEqual, 404)
+				So(result.StatusCode, ShouldEqual, http.StatusNotFound)
 				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
