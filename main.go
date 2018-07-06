@@ -104,10 +104,6 @@ var (
 	// hostname. allow user to override, otherwise we look it up
 	hostname = flag.String("hostname", "unknown-hostname", "Override the hostname we get from the OS")
 
-	// turn off cayenn
-	isDisableCayenn = flag.Bool("disablecayenn", false, "Disable loading of Cayenn TCP/UDP server on port 8988")
-	//	isLoadCayenn = flag.Bool("allowcayenn", false, "Allow loading of Cayenn TCP/UDP server on port 8988")
-
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
@@ -283,21 +279,6 @@ func main() {
 	go sh.run()
 	// launch our dummy data routine
 	//go d.run()
-
-	// Run the UDP & TCP Server that are part of the Cayenn protocol
-	// This lets us listen for devices announcing they
-	// are alive on our local network, or are sending data from sensors,
-	// or acknowledgements to commands we send the device.
-	// This is used by Cayenn devices such as ESP8266 devices that
-	// can speak to SPJS and allow SPJS to pass through their data back to
-	// clients such as ChiliPeppr.
-	if *isDisableCayenn == false {
-		log.Println("Attempting to load Cayenn TCP/UDP server on port 8988...")
-		go udpServerRun()
-		go tcpServerRun()
-	} else {
-		log.Println("Disabled loading of Cayenn TCP/UDP server on port 8988")
-	}
 
 	router := httprouter.New()
 	restURL := fmt.Sprintf("/api/v%v/", string(version))
