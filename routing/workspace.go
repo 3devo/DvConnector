@@ -48,9 +48,10 @@ func GetAllWorkspaces(env *utils.Env) httprouter.Handle {
 //        200: body:WorkspaceResponse
 func GetWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var workspace models.Workspace
+		workspace := models.Workspace{}
 		uuid := ps.ByName("uuid")
 		err := env.Db.One("UUID", uuid, &workspace)
+
 		if err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
@@ -79,12 +80,12 @@ func GetWorkspace(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func CreateWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.WorkspaceCreationBody
+		validation := responses.WorkspaceCreationBody{}
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
+
 		json.Unmarshal(body, &validation.Data)
-		err := env.Validator.Struct(validation)
-		if err != nil {
+		if err := env.Validator.Struct(validation); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Workspaces",
@@ -102,8 +103,7 @@ func CreateWorkspace(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.Save(&validation.Data)
-		if err != nil {
+		if err := env.Db.Save(&validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
 				"Workspaces",
@@ -135,12 +135,12 @@ func CreateWorkspace(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.WorkspaceCreationBody
+		validation := responses.WorkspaceCreationBody{}
 		body, _ := ioutil.ReadAll(r.Body)
 		uuid := ps.ByName("uuid")
+
 		json.Unmarshal(body, &validation.Data)
-		err := env.Validator.Struct(validation)
-		if err != nil {
+		if err := env.Validator.Struct(validation); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Workspaces",
@@ -149,8 +149,7 @@ func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.One("UUID", uuid, &models.Workspace{})
-		if err != nil {
+		if err := env.Db.One("UUID", uuid, &models.Workspace{}); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Workspaces",
@@ -159,8 +158,7 @@ func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.Update(&validation.Data)
-		if err != nil {
+		if err := env.Db.Update(&validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
 				"Workspaces",
@@ -192,10 +190,10 @@ func UpdateWorkspace(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func DeleteWorkspace(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var workspace models.Workspace
+		workspace := models.Workspace{}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &workspace)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &workspace); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Workspaces",
@@ -204,8 +202,8 @@ func DeleteWorkspace(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.DeleteStruct(&workspace)
-		if err != nil {
+
+		if err := env.Db.DeleteStruct(&workspace); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Workspaces",

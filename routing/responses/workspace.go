@@ -28,14 +28,17 @@ type WorkspaceCreationBody struct {
 // GenerateWorkspaceResponseObject returns a WorkSpaceResponse object filled with actual sheet and chart data instead of id
 func GenerateWorkspaceResponseObject(workspace *models.Workspace, env *utils.Env) *WorkspaceResponse {
 	response := new(WorkspaceResponse)
-	var sheets []models.Sheet
-	var selection []q.Matcher
+	sheets := []models.Sheet{}
+	selection := []q.Matcher{}
+
 	for _, sheet := range workspace.Sheets {
 		selection = append(selection, q.Eq("UUID", sheet))
 	}
+
 	query := env.Db.Select(q.Or(selection...))
 	query.Find(&sheets)
 	sheetResponses := make([]*SheetResponse, 0)
+
 	for _, sheet := range sheets {
 		sheetResponses = append(sheetResponses, GenerateSheetResponseObject(&sheet, env))
 	}

@@ -1,8 +1,11 @@
 package utils
 
-import "regexp"
+import "github.com/google/uuid"
 
-func IsValidUUID(uuid string) bool {
-	r := regexp.MustCompile("^[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-4[a-fA-F0-9]{3}-[8|9|aA|bB][a-fA-F0-9]{3}-[a-fA-F0-9]{12}$")
-	return r.MatchString(uuid)
+// IsValidUUID is a function that returns true if the input is a valid uuid.
+// And false if the input isn't a valid uuid
+// https://stackoverflow.com/a/46315070
+func IsValidUUID(u string) bool {
+	_, err := uuid.Parse(u)
+	return err == nil
 }

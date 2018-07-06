@@ -292,48 +292,44 @@ func main() {
 		log.Println("Disabled loading of Cayenn TCP/UDP server on port 8988")
 	}
 
-	// Setup GPIO server
-	// Ignore GPIO for now, but it would be nice to get GPIO going natively
-	//gpio.PreInit()
-	// when the app exits, clean up our gpio ports
-	//defer gpio.CleanupGpio()
 	router := httprouter.New()
-	restUrl := fmt.Sprintf("/api/v%v/", string(version))
+	restURL := fmt.Sprintf("/api/v%v/", string(version))
 	router.GET("/ws", wsHandler)
 
 	/**	LOG FILE ROUTING */
-	router.GET(restUrl+"logFiles", routing.GetAllLogFiles(env))
-	router.GET(restUrl+"logFiles/:uuid", routing.GetLogFile(env))
-	router.POST(restUrl+"logFiles", routing.CreateLogFile(env))
-	router.DELETE(restUrl+"logFiles/:uuid", routing.DeleteLogFile(env))
-	router.PUT(restUrl+"logFiles/:uuid", routing.UpdateLogFile(env))
+	router.GET(restURL+"logFiles", routing.GetAllLogFiles(env))
+	router.GET(restURL+"logFiles/:uuid", routing.GetLogFile(env))
+	router.POST(restURL+"logFiles", routing.CreateLogFile(env))
+	router.DELETE(restURL+"logFiles/:uuid", routing.DeleteLogFile(env))
+	router.PUT(restURL+"logFiles/:uuid", routing.UpdateLogFile(env))
 
 	/**	CHART ROUTING */
-	router.GET(restUrl+"charts", routing.GetAllCharts(env))
-	router.GET(restUrl+"charts/:uuid", routing.GetChart(env))
-	router.POST(restUrl+"charts", routing.CreateChart(env))
-	router.DELETE(restUrl+"charts/:uuid", routing.DeleteChart(env))
-	router.PUT(restUrl+"charts/:uuid", routing.UpdateChart(env))
+	router.GET(restURL+"charts", routing.GetAllCharts(env))
+	router.GET(restURL+"charts/:uuid", routing.GetChart(env))
+	router.POST(restURL+"charts", routing.CreateChart(env))
+	router.DELETE(restURL+"charts/:uuid", routing.DeleteChart(env))
+	router.PUT(restURL+"charts/:uuid", routing.UpdateChart(env))
 
 	/**	SHEET ROUTING */
-	router.GET(restUrl+"sheets", routing.GetAllSheets(env))
-	router.GET(restUrl+"sheets/:uuid", routing.GetSheet(env))
-	router.POST(restUrl+"sheets", routing.CreateSheet(env))
-	router.DELETE(restUrl+"sheets/:uuid", routing.DeleteSheet(env))
-	router.PUT(restUrl+"sheets/:uuid", routing.UpdateSheet(env))
+	router.GET(restURL+"sheets", routing.GetAllSheets(env))
+	router.GET(restURL+"sheets/:uuid", routing.GetSheet(env))
+	router.POST(restURL+"sheets", routing.CreateSheet(env))
+	router.DELETE(restURL+"sheets/:uuid", routing.DeleteSheet(env))
+	router.PUT(restURL+"sheets/:uuid", routing.UpdateSheet(env))
 
 	/**	WORKSPACE ROUTING */
-	router.GET(restUrl+"workspaces", routing.GetAllWorkspaces(env))
-	router.GET(restUrl+"workspaces/:uuid", routing.GetWorkspace(env))
-	router.POST(restUrl+"workspaces", routing.CreateWorkspace(env))
-	router.DELETE(restUrl+"workspaces/:uuid", routing.DeleteWorkspace(env))
-	router.PUT(restUrl+"workspaces/:uuid", routing.UpdateWorkspace(env))
+	router.GET(restURL+"workspaces", routing.GetAllWorkspaces(env))
+	router.GET(restURL+"workspaces/:uuid", routing.GetWorkspace(env))
+	router.POST(restURL+"workspaces", routing.CreateWorkspace(env))
+	router.DELETE(restURL+"workspaces/:uuid", routing.DeleteWorkspace(env))
+	router.PUT(restURL+"workspaces/:uuid", routing.UpdateWorkspace(env))
 
 	router.NotFound = http.FileServer(http.Dir(*frontendDir))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
+
+	/** Hook in middlewares */
 	negroniMiddleware := negroni.New()
-	// n.Use(negroni.NewRecovery())
 	negroniMiddleware.Use(negronilogrus.NewMiddleware())
 	negroniMiddleware.Use(cors.AllowAll())
 	negroniMiddleware.UseHandler(router)

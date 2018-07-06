@@ -48,10 +48,10 @@ func GetAllSheets(env *utils.Env) httprouter.Handle {
 //        200: body:SheetResponse
 func GetSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var sheet models.Sheet
+		sheet := models.Sheet{}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &sheet)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &sheet); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Sheets",
@@ -79,12 +79,12 @@ func GetSheet(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func CreateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.SheetCreationBody
+		validation := responses.SheetCreationBody{}
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
 		json.Unmarshal(body, &validation.Data)
-		err := env.Validator.Struct(validation)
-		if err != nil {
+
+		if err := env.Validator.Struct(validation); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Sheets",
@@ -102,8 +102,8 @@ func CreateSheet(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.Save(&validation.Data)
-		if err != nil {
+
+		if err := env.Db.Save(&validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
 				"Sheets",
@@ -135,12 +135,13 @@ func CreateSheet(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func UpdateSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.SheetCreationBody
+		validation := responses.SheetCreationBody{}
 		body, _ := ioutil.ReadAll(r.Body)
 		uuid := ps.ByName("uuid")
+
 		json.Unmarshal(body, &validation.Data)
-		err := env.Validator.Struct(validation)
-		if err != nil {
+
+		if err := env.Validator.Struct(validation); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Sheets",
@@ -149,8 +150,7 @@ func UpdateSheet(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.One("UUID", uuid, &models.Sheet{})
-		if err != nil {
+		if err := env.Db.One("UUID", uuid, &models.Sheet{}); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Sheets",
@@ -159,8 +159,8 @@ func UpdateSheet(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.Update(&validation.Data)
-		if err != nil {
+
+		if err := env.Db.Update(&validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
 				"Sheets",
@@ -192,10 +192,10 @@ func UpdateSheet(env *utils.Env) httprouter.Handle {
 //        200: ResourceStatusResponse
 func DeleteSheet(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var sheet models.Sheet
+		sheet := models.Sheet{}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &sheet)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &sheet); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Sheets",
@@ -204,8 +204,7 @@ func DeleteSheet(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.DeleteStruct(&sheet)
-		if err != nil {
+		if err := env.Db.DeleteStruct(&sheet); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Sheets",

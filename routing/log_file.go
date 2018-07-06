@@ -29,11 +29,13 @@ func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 		logFiles := make([]models.LogFile, 0)
 		body := make([]*responses.LogFileResponse, 0)
 		query, _ := utils.QueryBuilder(env, r)
-		w.WriteHeader(http.StatusOK)
+
 		query.Find(&logFiles)
 		for _, file := range logFiles {
 			body = append(body, responses.GenerateLogResponse(&file, env))
 		}
+
+		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(body)
 	}
 }
@@ -52,10 +54,10 @@ func GetAllLogFiles(env *utils.Env) httprouter.Handle {
 //	404: ResourceStatusResponse
 func GetLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var logFile models.LogFile
+		logFile := models.LogFile{}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &logFile)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &logFile); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Logfiles",
@@ -86,13 +88,12 @@ func GetLogFile(env *utils.Env) httprouter.Handle {
 //	default: ResourceStatusResponse
 func CreateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validateModel responses.LogFileCreationBody
+		validateModel := responses.LogFileCreationBody{}
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
-		//validation
+
 		json.Unmarshal([]byte(data.String()), &validateModel.Data)
-		err := env.Validator.Struct(validateModel)
-		if err != nil {
+		if err := env.Validator.Struct(validateModel); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Logfiles",
@@ -110,7 +111,7 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		_, err = models.CreateLogFile(
+		err := models.CreateLogFile(
 			data.Get("uuid").String(),
 			data.Get("name").String(),
 			data.Get("note").String(),
@@ -145,14 +146,15 @@ func CreateLogFile(env *utils.Env) httprouter.Handle {
 //	default: ResourceStatusResponse
 func UpdateLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validateModel responses.LogFileCreationBody
-		var logFile models.LogFile
+		validateModel := responses.LogFileCreationBody{}
+		logFile := models.LogFile{}
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
-		//validation
+		uuid := ps.ByName("uuid")
+
 		json.Unmarshal(body, &validateModel.Data)
-		err := env.Validator.Struct(validateModel)
-		if err != nil {
+
+		if err := env.Validator.Struct(validateModel); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Logfiles",
@@ -161,9 +163,8 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		uuid := ps.ByName("uuid")
-		err = env.Db.One("UUID", uuid, &logFile)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &logFile); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Logfiles",
@@ -172,7 +173,7 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = logFile.UpdateLogFile(
+		err := logFile.UpdateLogFile(
 			data.Get("name").String(),
 			data.Get("note").String(),
 			env)
@@ -206,10 +207,10 @@ func UpdateLogFile(env *utils.Env) httprouter.Handle {
 //	default: ResourceStatusResponse
 func DeleteLogFile(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var logFile models.LogFile
+		logFile := models.LogFile{}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &logFile)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &logFile); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Logfiles",
@@ -218,8 +219,7 @@ func DeleteLogFile(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = logFile.DeleteLogFile(env)
-		if err != nil {
+		if err := logFile.DeleteLogFile(env); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
 				"Logfiles",

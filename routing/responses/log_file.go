@@ -43,6 +43,7 @@ func GenerateLogResponse(logFile *models.LogFile, env *utils.Env) *LogFileRespon
 	response.UUID = logFile.UUID
 	logName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
 	logData, err := ioutil.ReadFile(fmt.Sprintf("./%v/%v", "logs", logName)) // just pass the file name
+
 	if err == nil {
 		response.Log = string(logData)
 	}

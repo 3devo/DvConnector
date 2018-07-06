@@ -21,7 +21,7 @@ type LogFile struct {
 
 // CreateLogFile creates a new logfile in the database
 // It also creates a log file and a note file if available on the system
-func CreateLogFile(uuid string, name string, note string, env *utils.Env) (*LogFile, error) {
+func CreateLogFile(uuid string, name string, note string, env *utils.Env) error {
 	logFile := new(LogFile)
 	logFile.UUID = uuid
 	logFile.Name = name
@@ -33,19 +33,18 @@ func CreateLogFile(uuid string, name string, note string, env *utils.Env) (*LogF
 	f, err := os.Create(filepath.Join(env.FileDir, "logs", logName))
 	f.Close()
 	if err != nil {
-		return nil, err
+		return err
 	}
 	if logFile.HasNote {
 		err := ioutil.WriteFile(filepath.Join(env.FileDir, "notes", logName), []byte(note), os.ModePerm)
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-	err = env.Db.Save(logFile)
-	if err != nil {
-		return nil, err
+	if err := env.Db.Save(logFile); err != nil {
+		return err
 	}
-	return logFile, nil
+	return nil
 }
 
 // UpdateLogFile updates the name and notes

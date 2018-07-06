@@ -28,6 +28,7 @@ func GetAllCharts(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
 		charts := make([]models.Chart, 0)
 		query, _ := utils.QueryBuilder(env, r)
+
 		w.WriteHeader(http.StatusOK)
 		query.Find(&charts)
 		json.NewEncoder(w).Encode(charts)
@@ -46,10 +47,10 @@ func GetAllCharts(env *utils.Env) httprouter.Handle {
 //	200: body:Chart
 func GetChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var Chart models.Chart
+		Chart := models.Chart{}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &Chart)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &Chart); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Charts",
@@ -74,13 +75,13 @@ func GetChart(env *utils.Env) httprouter.Handle {
 //	200: ResourceStatusResponse
 func CreateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.ChartCreationBody
+		validation := responses.ChartCreationBody{}
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
 
 		json.Unmarshal(body, &validation.Data)
-		err := env.Validator.Struct(validation)
-		if err != nil {
+
+		if err := env.Validator.Struct(validation); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Charts",
@@ -99,8 +100,7 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 			return
 		}
 
-		err = env.Db.Save(&validation.Data)
-		if err != nil {
+		if err := env.Db.Save(&validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Charts",
@@ -130,13 +130,13 @@ func CreateChart(env *utils.Env) httprouter.Handle {
 //	200: ResourceStatusResponse
 func UpdateChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var validation responses.ChartCreationBody
+		validation := responses.ChartCreationBody{}
 		body, _ := ioutil.ReadAll(r.Body)
 		data := gjson.Parse(string(body))
 
 		json.Unmarshal(body, &validation.Data)
-		err := env.Validator.Struct(validation)
-		if err != nil {
+
+		if err := env.Validator.Struct(validation); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Charts",
@@ -145,8 +145,8 @@ func UpdateChart(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.One("UUID", data.Get("uuid").String(), &models.Chart{})
-		if err != nil {
+
+		if err := env.Db.One("UUID", data.Get("uuid").String(), &models.Chart{}); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Charts",
@@ -156,8 +156,7 @@ func UpdateChart(env *utils.Env) httprouter.Handle {
 			return
 		}
 
-		err = env.Db.Update(&validation.Data)
-		if err != nil {
+		if err := env.Db.Update(&validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusConflict,
 				"Charts",
@@ -186,10 +185,10 @@ func UpdateChart(env *utils.Env) httprouter.Handle {
 //	200: ResourceStatusResponse
 func DeleteChart(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		var Chart models.Chart
+		Chart := models.Chart{}
 		uuid := ps.ByName("uuid")
-		err := env.Db.One("UUID", uuid, &Chart)
-		if err != nil {
+
+		if err := env.Db.One("UUID", uuid, &Chart); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusNotFound,
 				"Charts",
@@ -198,8 +197,8 @@ func DeleteChart(env *utils.Env) httprouter.Handle {
 				w)
 			return
 		}
-		err = env.Db.DeleteStruct(&Chart)
-		if err != nil {
+
+		if err := env.Db.DeleteStruct(&Chart); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Charts",

@@ -26,8 +26,8 @@ type SheetCreationBody struct {
 
 // GenerateSheetResponseObject returns a SheetResponse object filled with actual chart data instead of id
 func GenerateSheetResponseObject(sheet *models.Sheet, env *utils.Env) *SheetResponse {
-	var charts []models.Chart
-	var selection []q.Matcher
+	charts := []models.Chart{}
+	selection := []q.Matcher{}
 	response := new(SheetResponse)
 
 	for _, chart := range sheet.Charts {
