@@ -14,8 +14,7 @@
             "name": "xaxis",
             "title": "t [s]",
             "range": [
-                0,
-                null
+                0
             ]
         },
         {

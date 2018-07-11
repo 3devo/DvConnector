@@ -15,8 +15,7 @@
             "name": "xaxis",
             "title": "Time",
             "range": [
-                0,
-                null
+                0
             ],
             "filler": false
         },
