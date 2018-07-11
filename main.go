@@ -137,13 +137,15 @@ func launchSelfLater() {
 
 func main() {
 	newDatabase := false
-	if _, err := os.Stat("feconnector.db"); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(*files, "database", "feconnector.db")); os.IsNotExist(err) {
 		newDatabase = true
 	}
-	db, _ = storm.Open("feconnector.db")
 	os.MkdirAll(filepath.Join(*files, "logs"), os.ModePerm)
 	os.MkdirAll(filepath.Join(*files, "notes"), os.ModePerm)
 	os.MkdirAll(filepath.Join(*files, "public"), os.ModePerm)
+	os.MkdirAll(filepath.Join(*files, "database"), os.ModePerm)
+
+	db, _ = storm.Open(filepath.Join(*files, "database", "feconnector.db"))
 	db.Init(&models.Workspace{})
 	db.Init(&models.Sheet{})
 	db.Init(&models.Chart{})
