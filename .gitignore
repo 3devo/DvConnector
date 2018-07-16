@@ -9,5 +9,6 @@ snapshot/*
 
 release/*
 files
+vendor
 swagger.json
 feconnector.db*
