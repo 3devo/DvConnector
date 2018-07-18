@@ -2,7 +2,6 @@ package middleware
 
 import (
 	"context"
-	"log"
 	"net/http"
 	"regexp"
 
@@ -25,8 +24,6 @@ func AuthRequired(h httprouter.Handle, env *utils.Env) httprouter.Handle {
 					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					return
 				}
-				log.Println("BLEEP")
-				log.Println(blacklist, token[1])
 				claims, err := utils.ValidateJWTToken(token[1])
 				if err != nil {
 					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)

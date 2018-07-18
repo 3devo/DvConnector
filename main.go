@@ -296,7 +296,7 @@ func main() {
 
 	router := httprouter.New()
 	restURL := fmt.Sprintf("/api/v%v/", string(version))
-	router.GET("/ws", wsHandler)
+	router.GET("/ws", wsHandle(env))
 
 	/**	LOG FILE ROUTING */
 	router.GET(restURL+"logFiles", middleware.AuthRequired(routing.GetAllLogFiles(env), env))

@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"regexp"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"time"
 
 	"github.com/3devo/feconnector/models"
+	. "github.com/logrusorgru/aurora"
 )
 
 type Bufferflow3Devo struct {
@@ -53,7 +55,7 @@ func (b *Bufferflow3Devo) Init() {
 	var logFile = models.LogFile{}
 	err := query.First(&logFile)
 	if err != nil {
-		log.Fatal("Cannot find logfile")
+		log.Println(Red("Can not find logfile"))
 	}
 	go func() {
 		for data := range b.Input {
@@ -151,7 +153,7 @@ func (b *Bufferflow3Devo) Init() {
 				if err == nil {
 					err := logFile.AppendLog(m.D, env)
 					if err != nil {
-						log.Fatalf("Can't write to log file -> %v", logFile.GetFileName())
+						log.Println(Red(fmt.Sprintf("Can't write to log file -> %v", logFile.GetFileName())))
 					}
 					h.broadcastSys <- bm
 				}

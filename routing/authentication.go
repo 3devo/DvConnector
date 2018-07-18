@@ -98,8 +98,7 @@ func Logout(env *utils.Env) httprouter.Handle {
 		if len(token) > 0 {
 			env.Db.Save(&models.BlackListedToken{
 				Token:      token[1],
-				Expiration: r.Context().Value("jwtClaims").(jwt.StandardClaims).ExpiresAt})
-
+				Expiration: r.Context().Value("jwtClaims").(*jwt.StandardClaims).ExpiresAt})
 			responses.WriteResourceStatusResponse(
 				http.StatusOK,
 				"Authentication",
