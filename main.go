@@ -29,12 +29,12 @@
 //     - application/json
 //
 //     Security:
-//     - api_key:
+//     - Bearer:
 //
 //     SecurityDefinitions:
-//     api_key:
+//     Bearer:
 //          type: apiKey
-//          name: KEY
+//          name: Authorization
 //          in: header
 // swagger:meta
 package main
@@ -45,6 +45,7 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+
 	//"path/filepath"
 	"errors"
 	"fmt"
@@ -56,10 +57,12 @@ import (
 	"runtime/debug"
 	"time"
 
+	"github.com/3devo/feconnector/middleware"
 	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/routing"
 	"github.com/3devo/feconnector/utils"
 	"github.com/asdine/storm"
+	"github.com/asdine/storm/q"
 	"github.com/julienschmidt/httprouter"
 	negronilogrus "github.com/meatballhat/negroni-logrus"
 	"github.com/rs/cors"
@@ -142,6 +145,8 @@ func main() {
 	os.MkdirAll(filepath.Join(*files, "database"), os.ModePerm)
 
 	db, _ = storm.Open(filepath.Join(*files, "database", "feconnector.db"))
+	db.Init(&models.User{})
+	db.Init(&models.BlackListedToken{})
 	db.Init(&models.Workspace{})
 	db.Init(&models.Sheet{})
 	db.Init(&models.Chart{})
@@ -150,8 +155,17 @@ func main() {
 		log.Println("filling database with default values")
 		FillDatabase(db)
 	}
+	var users []models.User
+	usersExist := false
+	db.All(&users)
+	if len(users) > 0 {
+		usersExist = true
+	}
+	// Delete expired tokens
+	db.Select(q.Lt("Expiration", time.Now().Unix())).Delete(new(models.BlackListedToken))
+
 	defer db.Close()
-	env = &utils.Env{Db: db, Validator: validate, FileDir: *files}
+	env = &utils.Env{Db: db, Validator: validate, FileDir: *files, HasAuth: usersExist}
 	/** Custom validators **/
 	validate.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 		return utils.IsValidUUID(fl.Field().String())
@@ -285,32 +299,41 @@ func main() {
 	router.GET("/ws", wsHandler)
 
 	/**	LOG FILE ROUTING */
-	router.GET(restURL+"logFiles", routing.GetAllLogFiles(env))
-	router.GET(restURL+"logFiles/:uuid", routing.GetLogFile(env))
-	router.POST(restURL+"logFiles", routing.CreateLogFile(env))
-	router.DELETE(restURL+"logFiles/:uuid", routing.DeleteLogFile(env))
-	router.PUT(restURL+"logFiles/:uuid", routing.UpdateLogFile(env))
+	router.GET(restURL+"logFiles", middleware.AuthRequired(routing.GetAllLogFiles(env), env))
+	router.GET(restURL+"logFiles/:uuid", middleware.AuthRequired(routing.GetLogFile(env), env))
+	router.POST(restURL+"logFiles", middleware.AuthRequired(routing.CreateLogFile(env), env))
+	router.DELETE(restURL+"logFiles/:uuid", middleware.AuthRequired(routing.DeleteLogFile(env), env))
+	router.PUT(restURL+"logFiles/:uuid", middleware.AuthRequired(routing.UpdateLogFile(env), env))
 
 	/**	CHART ROUTING */
-	router.GET(restURL+"charts", routing.GetAllCharts(env))
-	router.GET(restURL+"charts/:uuid", routing.GetChart(env))
-	router.POST(restURL+"charts", routing.CreateChart(env))
-	router.DELETE(restURL+"charts/:uuid", routing.DeleteChart(env))
-	router.PUT(restURL+"charts/:uuid", routing.UpdateChart(env))
+	router.GET(restURL+"charts", middleware.AuthRequired(routing.GetAllCharts(env), env))
+	router.GET(restURL+"charts/:uuid", middleware.AuthRequired(routing.GetChart(env), env))
+	router.POST(restURL+"charts", middleware.AuthRequired(routing.CreateChart(env), env))
+	router.DELETE(restURL+"charts/:uuid", middleware.AuthRequired(routing.DeleteChart(env), env))
+	router.PUT(restURL+"charts/:uuid", middleware.AuthRequired(routing.UpdateChart(env), env))
 
 	/**	SHEET ROUTING */
-	router.GET(restURL+"sheets", routing.GetAllSheets(env))
-	router.GET(restURL+"sheets/:uuid", routing.GetSheet(env))
-	router.POST(restURL+"sheets", routing.CreateSheet(env))
-	router.DELETE(restURL+"sheets/:uuid", routing.DeleteSheet(env))
-	router.PUT(restURL+"sheets/:uuid", routing.UpdateSheet(env))
+	router.GET(restURL+"sheets", middleware.AuthRequired(routing.GetAllSheets(env), env))
+	router.GET(restURL+"sheets/:uuid", middleware.AuthRequired(routing.GetSheet(env), env))
+	router.POST(restURL+"sheets", middleware.AuthRequired(routing.CreateSheet(env), env))
+	router.DELETE(restURL+"sheets/:uuid", middleware.AuthRequired(routing.DeleteSheet(env), env))
+	router.PUT(restURL+"sheets/:uuid", middleware.AuthRequired(routing.UpdateSheet(env), env))
 
 	/**	WORKSPACE ROUTING */
-	router.GET(restURL+"workspaces", routing.GetAllWorkspaces(env))
-	router.GET(restURL+"workspaces/:uuid", routing.GetWorkspace(env))
-	router.POST(restURL+"workspaces", routing.CreateWorkspace(env))
-	router.DELETE(restURL+"workspaces/:uuid", routing.DeleteWorkspace(env))
-	router.PUT(restURL+"workspaces/:uuid", routing.UpdateWorkspace(env))
+	router.GET(restURL+"workspaces", middleware.AuthRequired(routing.GetAllWorkspaces(env), env))
+	router.GET(restURL+"workspaces/:uuid", middleware.AuthRequired(routing.GetWorkspace(env), env))
+	router.POST(restURL+"workspaces", middleware.AuthRequired(routing.CreateWorkspace(env), env))
+	router.DELETE(restURL+"workspaces/:uuid", middleware.AuthRequired(routing.DeleteWorkspace(env), env))
+	router.PUT(restURL+"workspaces/:uuid", middleware.AuthRequired(routing.UpdateWorkspace(env), env))
+
+	/**	USER ROUTING */
+	router.POST(restURL+"users", routing.CreateUser(env))
+	router.DELETE(restURL+"users/:uuid", middleware.AuthRequired(routing.DeleteUser(env), env))
+	router.PUT(restURL+"users/:uuid", middleware.AuthRequired(routing.UpdateUser(env), env))
+
+	/**	AUTH ROUTING */
+	router.POST(restURL+"login", routing.Login(env))
+	router.POST(restURL+"logout", middleware.AuthRequired(routing.Logout(env), env))
 
 	router.NotFound = http.FileServer(http.Dir(filepath.Join(*files, "public")))
 	f := flag.Lookup("addr")
