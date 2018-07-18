@@ -36,6 +36,12 @@
   revision = "58854f77ee8d858ce751b0a9bcc5533fef7bfa9e"
 
 [[projects]]
+  name = "github.com/dgrijalva/jwt-go"
+  packages = ["."]
+  revision = "06ea1031745cb8b3dab3f6a236daf2b0aa468b7e"
+  version = "v3.2.0"
+
+[[projects]]
   branch = "master"
   name = "github.com/facchinm/go-serial"
   packages = ["."]
@@ -281,6 +287,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "50b040f70e4ffe1f5acf596bc2997daff8095d6a6ba94691748438db8daf97e4"
+  inputs-digest = "cb2ce34bf83f24bc8b3f9486b2d68cb5b08c4597a7f156cda11cf52bcda51c0f"
   solver-name = "gps-cdcl"
   solver-version = 1
