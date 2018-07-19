@@ -31,6 +31,7 @@ function usage
     echo "usage: ./build.sh [-c || -f || -r 0.1 \"cool release\" ||  -h]"
     echo "   ";
     echo "  -c             | --connector           : Build connector";
+    echo "  -d             | --dry                 : Dry release without tagging or uploade"
     echo "  -r tag message | --release tag message : Build release with tag and message";
     echo "  -h             | --help                : This help message";
 }
@@ -43,6 +44,7 @@ function parse_args
     while [ "$1" != "" ]; do
         case "$1" in
             -c | --connector )            build_connector;        shift;;
+            -d | --dry )                  dryRelease;          shift;;
             -r | --release )              release $2 $3;          shift;;
             -h | --help )                 usage;                  exit;; # quit and show usage
         esac
@@ -65,6 +67,35 @@ function build_connector
     else
         echo -e "\e[31m - Failed building connector"  >&2
         exit
+    fi
+}
+
+function dryRelease()
+{
+    rm -rf release && mkdir -p release
+    echo -e "\e[32mBUILDING RELEASE - \e[33m$*"
+    echo -e "\e[33m-------------------------\e[32m"
+
+    if ! build_linux $1 "amd64"; then
+        echo -e "\e[31m  LINUX AMD64 BUILD FAILED"
+    fi
+    if ! build_linux $1 "386"; then
+        echo -e "\e[31m  LINUX 386 BUILD FAILED"
+    fi
+    if ! build_linux $1 "arm"; then
+        echo -e "\e[31m  LINUX ARM BUILD FAILED"
+    fi
+
+    if ! build_windows $1 "386"; then
+        echo -e "\e[31m  WINDOWS x32 BUILD FAILED"
+    fi
+
+    if ! build_windows $1 "amd64"; then
+        echo -e "\e[31m  WINDOWS x64 BUILD FAILED"
+    fi
+
+    if ! build_osx $1; then
+        echo -e "\e[31m  Darwin BUILD FAILED"
     fi
 }
 
