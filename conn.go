@@ -63,9 +63,9 @@ func (c *connection) reader(env *utils.Env) {
 	c.ws.Close()
 }
 
-func (c *connection) writer() {
+func (c *connection) writer(env *utils.Env) {
 	for message := range c.send {
-		if c.authenticated {
+		if c.authenticated || !env.HasAuth {
 			err := c.ws.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
 				break
@@ -91,7 +91,7 @@ func wsHandle(env *utils.Env) httprouter.Handle {
 		c := &connection{send: make(chan []byte, 256*10), ws: ws}
 		h.register <- c
 		defer func() { h.unregister <- c }()
-		go c.writer()
+		go c.writer(env)
 		c.reader(env)
 	}
 }
