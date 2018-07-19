@@ -16,5 +16,5 @@ type LoginSuccess struct {
 type LoginParameters struct {
 	Username   string `json:"username" validate:"required"`
 	Password   string `json:"password" validate:"required"`
-	RememberMe bool   `json:"rememberMe" validate:""`
+	RememberMe bool   `json:"rememberMe"`
 }

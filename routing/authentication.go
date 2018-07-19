@@ -4,14 +4,11 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"regexp"
 	"time"
 
 	"github.com/tidwall/gjson"
-
-	"github.com/dgrijalva/jwt-go"
 
 	"github.com/3devo/feconnector/models"
 	"github.com/3devo/feconnector/routing/responses"
@@ -70,7 +67,6 @@ func Login(env *utils.Env) httprouter.Handle {
 		response := responses.LoginSuccess{}
 		expiration := time.Now().Add(time.Hour * time.Duration(1)).Unix()
 		if data.Get("rememberMe").Bool() {
-			log.Println("REMEMBERGIN")
 			expiration = time.Now().Add(time.Hour * time.Duration(24*30)).Unix()
 		}
 		token, _ := utils.GenerateJWTToken(user.UUID, expiration)
@@ -96,15 +92,16 @@ func Logout(env *utils.Env) httprouter.Handle {
 		regex := regexp.MustCompile("bearer (.*)")
 		token := regex.FindStringSubmatch(r.Header.Get("Authorization"))
 		if len(token) > 0 {
+
 			env.Db.Save(&models.BlackListedToken{
 				Token:      token[1],
-				Expiration: r.Context().Value("jwtClaims").(*jwt.StandardClaims).ExpiresAt})
-			responses.WriteResourceStatusResponse(
-				http.StatusOK,
-				"Authentication",
-				"Logout",
-				"",
-				w)
+				Expiration: r.Context().Value("expiration").(int64)})
 		}
+		responses.WriteResourceStatusResponse(
+			http.StatusOK,
+			"Authentication",
+			"LOGOUT",
+			"",
+			w)
 	}
 }

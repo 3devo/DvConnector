@@ -3,7 +3,6 @@ package routing
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 
 	"github.com/3devo/feconnector/routing/responses"
@@ -30,18 +29,8 @@ func CreateUser(env *utils.Env) httprouter.Handle {
 		body, _ := ioutil.ReadAll(r.Body)
 
 		json.Unmarshal(body, &validation.Data)
-		hashedPassword, err := utils.HashPassword(validation.Data.Password)
-		if err != nil {
-			log.Println("Password hash failed")
-			responses.WriteResourceStatusResponse(
-				http.StatusInternalServerError,
-				"Users",
-				"CREATE",
-				err.Error(),
-				w)
-		}
 		validation.Data.UUID = uuid.New().String()
-		validation.Data.Password = hashedPassword
+		validation.Data.Password = utils.HashPassword(validation.Data.Password)
 		if err := env.Validator.Struct(validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
@@ -101,7 +90,7 @@ func UpdateUser(env *utils.Env) httprouter.Handle {
 
 		json.Unmarshal(body, &validation.Data)
 
-		if err := env.Validator.Struct(validation); err != nil {
+		if err := env.Validator.Struct(validation.Data); err != nil {
 			responses.WriteResourceStatusResponse(
 				http.StatusInternalServerError,
 				"Users",

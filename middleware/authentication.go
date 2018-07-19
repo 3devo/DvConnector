@@ -29,7 +29,8 @@ func AuthRequired(h httprouter.Handle, env *utils.Env) httprouter.Handle {
 					http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 					return
 				}
-				ctx := context.WithValue(r.Context(), "jwtClaims", claims)
+				ctx := context.WithValue(r.Context(), "userId", claims.Id)
+				ctx = context.WithValue(r.Context(), "expiration", claims.ExpiresAt)
 				r = r.WithContext(ctx)
 			} else {
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)

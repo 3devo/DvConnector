@@ -14,9 +14,9 @@ func IsValidUUID(u string) bool {
 }
 
 // HashPassword hashes the given password with bcrypt
-func HashPassword(password string) (string, error) {
-	bytes, err := bcrypt.GenerateFromPassword([]byte(password), 14)
-	return string(bytes), err
+func HashPassword(password string) string {
+	bytes, _ := bcrypt.GenerateFromPassword([]byte(password), 14)
+	return string(bytes)
 }
 
 // CheckPasswordHash checks a plaintext password with a hashed password
