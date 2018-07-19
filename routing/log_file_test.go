@@ -13,7 +13,7 @@ import (
 
 	"github.com/3devo/feconnector/routing"
 	"github.com/3devo/feconnector/routing/responses"
-	uuid "github.com/satori/go.uuid"
+	"github.com/google/uuid"
 
 	"github.com/3devo/feconnector/utils"
 	"github.com/julienschmidt/httprouter"
@@ -242,7 +242,7 @@ func TestCreateLogFile(t *testing.T) {
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
 
 		updateBody := &responses.LogFileCreationBody{}
-		updateBody.Data.UUID = uuid.Must(uuid.NewV4()).String()
+		updateBody.Data.UUID = uuid.New().String()
 		updateBody.Data.Name = "test"
 		updateBody.Data.Note = "test note"
 

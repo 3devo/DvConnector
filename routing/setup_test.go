@@ -7,8 +7,6 @@ import (
 	"strconv"
 	"time"
 
-	b64 "encoding/base64"
-
 	"github.com/3devo/feconnector/models"
 	"github.com/asdine/storm"
 )
@@ -117,6 +115,6 @@ func CreateChart(chart *models.Chart) models.Chart {
 
 	chart.HorizontalRulers = []models.Ruler{}
 	chart.VerticalRulers = []models.Ruler{}
-	chart.Image = b64.StdEncoding.EncodeToString([]byte("test"))
+	chart.Image = "data:image/gif;base64,R0lG"
 	return *chart
 }
