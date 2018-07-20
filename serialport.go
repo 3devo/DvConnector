@@ -403,8 +403,8 @@ func spHandlerOpen(portname string, baud int, isSecondary bool, dtrOn bool) {
 	mode := &serial.Mode{}
 	mode.BaudRate = baud
 	mode.DataBits = 8
-	mode.Parity = 0
-	mode.StopBits = 1
+	mode.Parity = serial.NoParity
+	mode.StopBits = serial.OneStopBit
 	mode.DTROn = dtrOn
 
 	// Needed for original serial library
