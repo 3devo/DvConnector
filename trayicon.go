@@ -11,11 +11,11 @@ import (
 	"github.com/skratchdot/open-golang/open"
 )
 
-func setupSysTray() {
-	systray.Run(onReady, onExit)
+func setupSysTray(onInit func()) {
+	systray.Run(onInit, onExit)
 }
 
-func onReady() {
+func fillSysTray() {
 	systray.SetIcon(icon.Data)
 	systray.SetTitle("3devo serial monitor")
 	mOpen := systray.AddMenuItem("Open Monitor", "Opens the serial monitor")

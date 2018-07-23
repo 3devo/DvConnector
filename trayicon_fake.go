@@ -30,8 +30,11 @@
 
 package main
 
-func setupSysTray() {
+func setupSysTray(onInit func()) {
 	//no systray support for arm yet
+	select {}
+}
+func fillSysTray() {
 	select {}
 }
 
