@@ -135,6 +135,11 @@ func launchSelfLater() {
 }
 
 func main() {
+	setupSysTray(onInit)
+}
+
+func onInit() {
+	fillSysTray()
 	newDatabase := false
 	if _, err := os.Stat(filepath.Join(*files, "database", "feconnector.db")); os.IsNotExist(err) {
 		newDatabase = true
@@ -346,7 +351,6 @@ func main() {
 	negroniMiddleware.UseHandler(router)
 
 	go startHttp(ip, negroniMiddleware)
-	setupSysTray()
 	ch := make(chan bool)
 	<-ch
 }
