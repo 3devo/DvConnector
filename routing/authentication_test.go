@@ -236,3 +236,50 @@ func TestLogout(t *testing.T) {
 		})
 	})
 }
+
+func TestAuthRequired(t *testing.T) {
+	Convey("Setup", t, func() {
+		dir, db := PrepareDb()
+		defer os.RemoveAll(dir)
+		defer db.Close()
+		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: false}
+		Convey("Given a HTTP request for /api/x/authRequired with auth disabled", func() {
+			router := httprouter.New()
+			router.GET("/api/x/authRequired", routing.AuthRequired(env))
+			req := httptest.NewRequest("GET", "/api/x/authRequired", nil)
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			Convey("The response should return enabled false and return OK", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				response := responses.AuthEnabledResponse{Enabled: false}
+
+				expected, _ := json.Marshal(response)
+
+				So(string(body), ShouldResemble, string(append(expected, 10)))
+			})
+		})
+
+		Convey("Given a HTTP request for /api/x/authRequired with auth enabled", func() {
+			env.HasAuth = true
+			router := httprouter.New()
+			router.GET("/api/x/authRequired", routing.AuthRequired(env))
+			req := httptest.NewRequest("GET", "/api/x/authRequired", nil)
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			Convey("The response should return enabled false and return OK", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				response := responses.AuthEnabledResponse{Enabled: true}
+
+				expected, _ := json.Marshal(response)
+
+				So(string(body), ShouldResemble, string(append(expected, 10)))
+			})
+		})
+	})
+}

@@ -105,3 +105,21 @@ func Logout(env *utils.Env) httprouter.Handle {
 			w)
 	}
 }
+
+// AuthRequired returns true or false based if a user already exists
+// swagger:route GET /AuthRequired Authentication required
+//
+// Handler to check if authentication is needed
+//
+// Returns `{enabled: true|false}`` depending on if auth is enabled
+// Produces
+//	application/json
+// Responses:
+//	200: body:AuthEnabledResponse
+func AuthRequired(env *utils.Env) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		authEnabledResponse := responses.AuthEnabledResponse{Enabled: env.HasAuth}
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(authEnabledResponse)
+	}
+}
