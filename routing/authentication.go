@@ -84,18 +84,20 @@ func Login(env *utils.Env) httprouter.Handle {
 // Returns OK
 //
 // Produces:
-// 	application/text
+// 	application/json
 // Responses:
 //	200:
 func Logout(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		regex := regexp.MustCompile("bearer (.*)")
-		token := regex.FindStringSubmatch(r.Header.Get("Authorization"))
-		if len(token) > 0 {
+		if env.HasAuth {
+			regex := regexp.MustCompile("bearer (.*)")
+			token := regex.FindStringSubmatch(r.Header.Get("Authorization"))
+			if len(token) > 0 {
 
-			env.Db.Save(&models.BlackListedToken{
-				Token:      token[1],
-				Expiration: r.Context().Value("expiration").(int64)})
+				env.Db.Save(&models.BlackListedToken{
+					Token:      token[1],
+					Expiration: r.Context().Value("expiration").(int64)})
+			}
 		}
 		responses.WriteResourceStatusResponse(
 			http.StatusOK,

@@ -3,6 +3,7 @@ package routing_test
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -186,7 +187,7 @@ func TestLogout(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: true}
 
 		Convey("Given a HTTP request for /api/x/logout without a authentication token", func() {
 			router := httprouter.New()
@@ -209,7 +210,33 @@ func TestLogout(t *testing.T) {
 			})
 		})
 
-		Convey("Given a HTTP request for /api/x/logout with a authentication token", func() {
+		Convey("Given a HTTP request for /api/x/logout with token but no auth required", func() {
+			env.HasAuth = false
+			router := httprouter.New()
+			router.POST("/api/x/logout", routing.Logout(env))
+			req := httptest.NewRequest("POST", "/api/x/logout", nil)
+			token, _ := utils.GenerateJWTToken("uuid", time.Now().Unix())
+			req.Header.Add("Authorization", "bearer "+token)
+			ctx := context.WithValue(req.Context(), "expiration", time.Now().Unix())
+			req = req.WithContext(ctx)
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			Convey("The response should return OK and do nothing", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				response := responses.ResourceStatusResponse{}
+				response.Body.Code = http.StatusOK
+				response.Body.Resource = "Authentication"
+				response.Body.Action = "LOGOUT"
+				expected, _ := json.Marshal(response.Body)
+				So(db.One("Token", token, &models.BlackListedToken{}), ShouldResemble, errors.New("not found"))
+				So(string(body), ShouldResemble, string(append(expected, 10)))
+			})
+		})
+
+		Convey("Given a HTTP request for /api/x/logout with a authentication token and auth enabled", func() {
 			router := httprouter.New()
 			router.POST("/api/x/logout", routing.Logout(env))
 			req := httptest.NewRequest("POST", "/api/x/logout", nil)
