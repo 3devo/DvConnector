@@ -337,6 +337,7 @@ func onInit() {
 	router.PUT(restURL+"users/:uuid", middleware.AuthRequired(routing.UpdateUser(env), env))
 
 	/**	AUTH ROUTING */
+	router.GET(restURL+"authRequired", routing.AuthRequired(env))
 	router.POST(restURL+"login", routing.Login(env))
 	router.POST(restURL+"logout", middleware.AuthRequired(routing.Logout(env), env))
 

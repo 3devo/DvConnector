@@ -18,3 +18,9 @@ type LoginParameters struct {
 	Password   string `json:"password" validate:"required"`
 	RememberMe bool   `json:"rememberMe"`
 }
+
+// AuthEnabledResponse is the response body for the authEnabled endpoint
+// swagger:model AuthEnabledResponse
+type AuthEnabledResponse struct {
+	Enabled bool `json:"enabled"`
+}
