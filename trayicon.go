@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/3devo/feconnector/icon"
+	"github.com/3devo/feconnector/models"
 	"github.com/getlantern/systray"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -28,6 +29,13 @@ func fillSysTray() {
 		<-mAbout.ClickedCh
 		open.Run("https://3devo.com/support/")
 	}()
+	mReset := systray.AddMenuItem("Reset user", "Resets the user accounts")
+	go func() {
+		<-mReset.ClickedCh
+		var users = []models.User{}
+		env.Db.All(&users)
+		env.Db.DeleteStruct(&users)
+	}()
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 	go func() {
 		<-mQuit.ClickedCh
@@ -36,6 +44,7 @@ func fillSysTray() {
 		fmt.Println("Finished quitting")
 		os.Exit(0)
 	}()
+
 }
 
 func onExit() {
