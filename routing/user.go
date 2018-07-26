@@ -167,6 +167,7 @@ func DeleteUser(env *utils.Env) httprouter.Handle {
 			"DELETE",
 			"",
 			w)
+		env.HasAuth = false
 
 	}
 }
