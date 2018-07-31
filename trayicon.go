@@ -20,31 +20,31 @@ func fillSysTray() {
 	systray.SetIcon(icon.Data)
 	systray.SetTitle("3devo serial monitor")
 	mOpen := systray.AddMenuItem("Open Monitor", "Opens the serial monitor")
-	go func() {
-		<-mOpen.ClickedCh
-		open.Run("http://localhost:8989")
-	}()
 	mAbout := systray.AddMenuItem("About", "About this application")
-	go func() {
-		<-mAbout.ClickedCh
-		open.Run("https://3devo.com/support/")
-	}()
 	mReset := systray.AddMenuItem("Reset user", "Resets the user accounts")
-	go func() {
-		<-mReset.ClickedCh
-		var users = []models.User{}
-		env.Db.All(&users)
-		env.Db.DeleteStruct(&users)
-	}()
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 	go func() {
-		<-mQuit.ClickedCh
-		fmt.Println("Requesting quit")
-		systray.Quit()
-		fmt.Println("Finished quitting")
-		os.Exit(0)
+		for {
+			select {
+			case <-mOpen.ClickedCh:
+				open.Run("http://localhost:8989")
+			case <-mAbout.ClickedCh:
+				open.Run("https://3devo.com/support/")
+			case <-mReset.ClickedCh:
+				var users []models.User
+				env.Db.All(&users)
+				for _, user := range users {
+					env.Db.DeleteStruct(&user)
+				}
+				env.HasAuth = false
+			case <-mQuit.ClickedCh:
+				fmt.Println("Requesting quit")
+				systray.Quit()
+				fmt.Println("Finished quitting")
+				os.Exit(0)
+			}
+		}
 	}()
-
 }
 
 func onExit() {
