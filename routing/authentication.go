@@ -17,7 +17,7 @@ import (
 )
 
 const (
-	ErrorInvalidPassword = "Invalid password"
+	ErrorInvalidPassword = "Invalid password" // Invalid password error
 )
 
 // swagger:route POST /login Authentication Login
@@ -65,9 +65,9 @@ func Login(env *utils.Env) httprouter.Handle {
 			return
 		}
 		response := responses.LoginSuccess{}
-		expiration := time.Now().Add(time.Hour * time.Duration(1)).Unix()
+		expiration := time.Now().Add(time.Minute * time.Duration(utils.StandardTokenExpiration)).Unix()
 		if data.Get("rememberMe").Bool() {
-			expiration = time.Now().Add(time.Hour * time.Duration(24*30)).Unix()
+			expiration = time.Now().Add(time.Hour * time.Duration(utils.ExtendedTokenExpiration)).Unix()
 		}
 		token, _ := utils.GenerateJWTToken(user.UUID, expiration)
 		response.Data.Token = token
@@ -109,7 +109,7 @@ func Logout(env *utils.Env) httprouter.Handle {
 }
 
 // AuthRequired returns true or false based if a user already exists
-// swagger:route GET /AuthRequired Authentication required
+// swagger:route GET /authRequired Authentication required
 //
 // Handler to check if authentication is needed
 //
@@ -123,5 +123,30 @@ func AuthRequired(env *utils.Env) httprouter.Handle {
 		authEnabledResponse := responses.AuthEnabledResponse{Enabled: env.HasAuth}
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(authEnabledResponse)
+	}
+}
+
+// RefreshToken returns a new token
+// swagger::route GET /refreshToken Authentication refresh
+//
+// Handler that returns a new token if not expired
+//
+// Produces
+//	application/json
+// Responses:
+//	200: body:LoginSuccessResponse
+func RefreshToken(env *utils.Env) httprouter.Handle {
+	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
+		if env.HasAuth {
+			response := responses.LoginSuccess{}
+			expiration := time.Unix(r.Context().Value("expiration").(int64), 0).Add(time.Minute * time.Duration(utils.StandardTokenExpiration)).Unix()
+			token, _ := utils.GenerateJWTToken(r.Context().Value("userId").(string), expiration)
+			response.Data.Token = token
+			env.Db.Save(&models.BlackListedToken{
+				Token:      r.Context().Value("token").(string),
+				Expiration: r.Context().Value("expiration").(int64)})
+			json.NewEncoder(w).Encode(response.Data)
+		}
+		w.WriteHeader(http.StatusOK)
 	}
 }
