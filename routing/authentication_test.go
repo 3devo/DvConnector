@@ -1,7 +1,6 @@
 package routing_test
 
 import (
-	"context"
 	"encoding/json"
 	"errors"
 	"io/ioutil"
@@ -12,6 +11,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/3devo/feconnector/middleware"
 
 	"github.com/tidwall/gjson"
 
@@ -112,7 +113,7 @@ func TestLogin(t *testing.T) {
 				So(tokenString, ShouldNotBeEmpty)
 				token, err := utils.ValidateJWTToken(tokenString)
 				So(err, ShouldBeNil)
-				So(token.ExpiresAt, ShouldAlmostEqual, time.Now().Add(time.Hour*time.Duration(1)).Unix())
+				So(token.ExpiresAt, ShouldAlmostEqual, time.Now().Add(time.Minute*time.Duration(utils.StandardTokenExpiration)).Unix())
 			})
 		})
 
@@ -143,7 +144,7 @@ func TestLogin(t *testing.T) {
 				So(tokenString, ShouldNotBeEmpty)
 				token, err := utils.ValidateJWTToken(tokenString)
 				So(err, ShouldBeNil)
-				So(token.ExpiresAt, ShouldAlmostEqual, time.Now().Add(time.Hour*time.Duration(24*30)).Unix())
+				So(token.ExpiresAt, ShouldAlmostEqual, time.Now().Add(time.Hour*time.Duration(utils.ExtendedTokenExpiration)).Unix())
 			})
 		})
 
@@ -189,36 +190,30 @@ func TestLogout(t *testing.T) {
 		defer db.Close()
 		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: true}
 
-		Convey("Given a HTTP request for /api/x/logout without a authentication token", func() {
+		Convey("Given a HTTP request for /api/x/logout without a authentication token and auth enabled", func() {
 			router := httprouter.New()
-			router.POST("/api/x/logout", routing.Logout(env))
+			router.POST("/api/x/logout", middleware.AuthRequired(routing.Logout(env), env))
 			req := httptest.NewRequest("POST", "/api/x/logout", nil)
 			resp := httptest.NewRecorder()
 
 			router.ServeHTTP(resp, req)
 
-			Convey("The response should return OK and do nothing", func() {
+			Convey("The response should return unauthorized", func() {
 				result := resp.Result()
 				body, _ := ioutil.ReadAll(result.Body)
-				response := responses.ResourceStatusResponse{}
-				response.Body.Code = http.StatusOK
-				response.Body.Resource = "Authentication"
-				response.Body.Action = "LOGOUT"
-				expected, _ := json.Marshal(response.Body)
 
-				So(string(body), ShouldResemble, string(append(expected, 10)))
+				So(string(body), ShouldResemble, "Unauthorized\n")
 			})
 		})
 
 		Convey("Given a HTTP request for /api/x/logout with token but no auth required", func() {
 			env.HasAuth = false
 			router := httprouter.New()
-			router.POST("/api/x/logout", routing.Logout(env))
+			router.POST("/api/x/logout", middleware.AuthRequired(routing.Logout(env), env))
 			req := httptest.NewRequest("POST", "/api/x/logout", nil)
-			token, _ := utils.GenerateJWTToken("uuid", time.Now().Unix())
+			token, _ := utils.GenerateJWTToken("uuid", time.Now().Add(time.Minute*time.Duration(utils.StandardTokenExpiration)).Unix())
 			req.Header.Add("Authorization", "bearer "+token)
-			ctx := context.WithValue(req.Context(), "expiration", time.Now().Unix())
-			req = req.WithContext(ctx)
+
 			resp := httptest.NewRecorder()
 
 			router.ServeHTTP(resp, req)
@@ -238,12 +233,10 @@ func TestLogout(t *testing.T) {
 
 		Convey("Given a HTTP request for /api/x/logout with a authentication token and auth enabled", func() {
 			router := httprouter.New()
-			router.POST("/api/x/logout", routing.Logout(env))
+			router.POST("/api/x/logout", middleware.AuthRequired(routing.Logout(env), env))
 			req := httptest.NewRequest("POST", "/api/x/logout", nil)
-			token, _ := utils.GenerateJWTToken("uuid", time.Now().Unix())
+			token, _ := utils.GenerateJWTToken("uuid", time.Now().Add(time.Minute*time.Duration(utils.StandardTokenExpiration)).Unix())
 			req.Header.Add("Authorization", "bearer "+token)
-			ctx := context.WithValue(req.Context(), "expiration", time.Now().Unix())
-			req = req.WithContext(ctx)
 			resp := httptest.NewRecorder()
 
 			router.ServeHTTP(resp, req)
@@ -306,6 +299,67 @@ func TestAuthRequired(t *testing.T) {
 				expected, _ := json.Marshal(response)
 
 				So(string(body), ShouldResemble, string(append(expected, 10)))
+			})
+		})
+	})
+}
+
+func TestRefreshToken(t *testing.T) {
+	Convey("Setup", t, func() {
+		dir, db := PrepareDb()
+		defer os.RemoveAll(dir)
+		defer db.Close()
+		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: true}
+		Convey("Given a HTTP request for /api/x/refreshToken while containing a valid token", func() {
+			router := httprouter.New()
+			router.POST("/api/x/refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))
+			req := httptest.NewRequest("POST", "/api/x/refreshToken", nil)
+			expireTime := time.Now().Add(time.Minute * time.Duration(utils.StandardTokenExpiration)).Unix()
+			token, _ := utils.GenerateJWTToken("uuid", expireTime)
+			req.Header.Add("Authorization", "bearer "+token)
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			Convey("The response should return a new token with a extended expiration and add the old one to blacklist", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				tokenString := gjson.ParseBytes(body).Get("token").String()
+				claims, _ := utils.ValidateJWTToken(tokenString)
+				So(db.One("Token", token, &models.BlackListedToken{}), ShouldResemble, nil)
+				So(claims.ExpiresAt, ShouldBeGreaterThan, expireTime)
+			})
+		})
+
+		Convey("Given a HTTP request for /api/x/refreshToken while containing a invalid token", func() {
+			router := httprouter.New()
+			router.POST("/api/x/refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))
+			req := httptest.NewRequest("POST", "/api/x/refreshToken", nil)
+			token := "garbage"
+			req.Header.Add("Authorization", "bearer "+token)
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			Convey("Should return unauthorized", func() {
+				result := resp.Result()
+				body, _ := ioutil.ReadAll(result.Body)
+				So(string(body), ShouldResemble, "Unauthorized\n")
+			})
+		})
+
+		Convey("Given a HTTP request for /api/x/refreshToken while authEnabled is false", func() {
+			router := httprouter.New()
+			env.HasAuth = false
+			router.POST("/api/x/refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))
+			req := httptest.NewRequest("POST", "/api/x/refreshToken", nil)
+			resp := httptest.NewRecorder()
+
+			router.ServeHTTP(resp, req)
+
+			Convey("Should return unauthorized", func() {
+				result := resp.Result()
+				So(result.StatusCode, ShouldResemble, 200)
 			})
 		})
 	})
