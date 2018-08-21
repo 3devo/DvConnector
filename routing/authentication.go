@@ -127,7 +127,7 @@ func AuthRequired(env *utils.Env) httprouter.Handle {
 }
 
 // RefreshToken returns a new token
-// swagger::route GET /refreshToken Authentication refresh
+// swagger:route POST /refreshToken Authentication refresh
 //
 // Handler that returns a new token if not expired
 //
