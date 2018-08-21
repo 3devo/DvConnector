@@ -51,6 +51,7 @@ import (
 	"fmt"
 	"net"
 	"os"
+
 	//"net/http/pprof"
 	//"runtime"
 	"io"
@@ -338,6 +339,7 @@ func onInit() {
 
 	/**	AUTH ROUTING */
 	router.GET(restURL+"authRequired", routing.AuthRequired(env))
+	router.POST(restURL+"refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))
 	router.POST(restURL+"login", routing.Login(env))
 	router.POST(restURL+"logout", middleware.AuthRequired(routing.Logout(env), env))
 
