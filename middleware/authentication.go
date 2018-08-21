@@ -30,7 +30,8 @@ func AuthRequired(h httprouter.Handle, env *utils.Env) httprouter.Handle {
 					return
 				}
 				ctx := context.WithValue(r.Context(), "userId", claims.Id)
-				ctx = context.WithValue(r.Context(), "expiration", claims.ExpiresAt)
+				ctx = context.WithValue(ctx, "expiration", claims.ExpiresAt)
+				ctx = context.WithValue(ctx, "token", token[1])
 				r = r.WithContext(ctx)
 			} else {
 				http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
