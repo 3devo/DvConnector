@@ -6,7 +6,13 @@ import (
 	jwt "github.com/dgrijalva/jwt-go"
 )
 
-// GenerateJwtToken returns a JWT token based on the uuid, expiration and the secret sign
+// Token expiration durations
+const (
+	StandardTokenExpiration = 15             // StandardTokenExpiration minutes
+	ExtendedTokenExpiration = (24 * 30) * 60 //30 days in minutes
+)
+
+// GenerateJWTToken returns a JWT token based on the uuid, expiration and the secret sign
 func GenerateJWTToken(uuid string, expiration int64) (string, error) {
 	claims := jwt.StandardClaims{
 		ExpiresAt: expiration,
