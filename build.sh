@@ -211,8 +211,8 @@ function build_linux()
 {
     echo -e "\e[32mBuilding Linux $2"
     cd $startDir
-    mkdir $releaseDir-$1_linux_$2
-    cp -r default-files/* $releaseDir-$1_linux_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    mkdir -p $releaseDir-$1_linux_$2/default-files
+    cp -r default-files/* $releaseDir-$1_linux_$2/default-files 1>/dev/null 2>> $startDir/error.log || error $LINENO
     env GOOS=linux GOARCH=$2 go build -tags="cli" -o $releaseDir-$1_linux_$2/feconnector 1>/dev/null 2>> $startDir/error.log  || error $LINENO
     cd release
     tar -zcvf feconnector-$1_linux_$2.tar.gz feconnector-$1_linux_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
@@ -222,8 +222,8 @@ function build_linux()
 function build_windows()
 {
     echo -e "\e[32mBuilding Windows $2"
-    mkdir $releaseDir-$1_windows_$2
-    cp -r default-files/* $releaseDir-$1_windows_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    mkdir -p $releaseDir-$1_windows_$2/default-files
+    cp -r default-files/* $releaseDir-$1_windows_$2/default-files 1>/dev/null 2>> $startDir/error.log || error $LINENO
     env GOOS=windows GOARCH=$2 go build -v -o $releaseDir-$1_windows_$2/feconnector.exe 1>/dev/null 2>> $startDir/error.log || error $LINENO
     cd $releaseDir-$1_windows_$2
     zip -r ../feconnector-$1_windows_$2.zip * 1>/dev/null 2>> $startDir/error.log || error $LINENO
@@ -233,8 +233,8 @@ function build_windows()
 function build_osx()
 {
     echo -e "\e[32mBuilding Darwin x64"
-    mkdir $releaseDir-$1_darwin_amd64
-    cp -r default-files/* $releaseDir-$1_darwin_amd64 1>/dev/null 2>> $startDir/error.log || error $LINENO
+    mkdir -p $releaseDir-$1_darwin_amd64/default-files
+    cp -r default-files/* $releaseDir-$1_darwin_amd64/default-files 1>/dev/null 2>> $startDir/error.log || error $LINENO
     env GOOS=darwin GOARCH=amd64 go build -tags="cli" -o $releaseDir-$1_darwin_amd64/feconnector 1>/dev/null 2>> $startDir/error.log || error $LINENO
     cd $releaseDir-$1_darwin_amd64
     zip -r ../feconnector-$1_darwin_amd64.zip * 1>/dev/null 2>> $startDir/error.log || error $LINENO
