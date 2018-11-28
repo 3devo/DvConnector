@@ -27,13 +27,13 @@
     ],
     "horizontalRulers": [
         {
-            "y": "1800",
+            "y": 1800,
             "text": "1800",
             "width": 2,
             "color": "red"
         },
         {
-            "y": "1700",
+            "y": 1700,
             "text": "1700",
             "width": 2,
             "color": "orange"

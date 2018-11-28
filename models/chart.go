@@ -16,10 +16,19 @@ type PlotDataInformation struct {
 }
 
 type Ruler struct {
-	Text  string `json:"text" validate:"required"`
-	Y     string `json:"y" validate:"required"`
-	Width int    `json:"width" validate:"required"`
-	Color string `json:"color" validate:"hexcolor"`
+	Text   string `json:"text" validate:"required"`
+	Width  int    `json:"width" validate:"required"`
+	Color  string `json:"color" validate:"hexcolor"`
+	Filler bool   `json:"filler"`
+}
+type HRuler struct {
+	Ruler
+	Y int `json:"y" validate:"required"`
+}
+
+type VRuler struct {
+	Ruler
+	X int `json:"x" validate:"required"`
 }
 
 // Chart with the needed properties to generate a chart in the frontend
@@ -29,7 +38,7 @@ type Chart struct {
 	Title               string                `json:"title" validate:"required"`
 	PlotDataInformation []PlotDataInformation `json:"plotDataInformation"`
 	Axes                []Axis                `json:"axes"`
-	HorizontalRulers    []Ruler               `json:"horizontalRulers"`
-	VerticalRulers      []Ruler               `json:"verticalRulers"`
+	HorizontalRulers    []HRuler              `json:"horizontalRulers"`
+	VerticalRulers      []VRuler              `json:"verticalRulers"`
 	Image               string                `json:"image" validate:"datauri"`
 }
