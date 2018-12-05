@@ -6,6 +6,7 @@ import (
 	//"bufio"
 	"encoding/json"
 	"fmt"
+
 	//"path/filepath"
 	//"github.com/kballard/go-shellquote"
 	//"github.com/johnlauer/goserial"
@@ -507,7 +508,7 @@ func spList() {
 			AvailableBufferAlgorithms []string
 			Ver                       float32
 		*/
-		spl.SerialPorts[ctr] = SpPortItem{
+		newPort := SpPortItem{
 			Name:                      item.Name,
 			Friendly:                  item.FriendlyName,
 			SerialNumber:              item.SerialNumber,
@@ -518,35 +519,39 @@ func spList() {
 			Baud:                      0,
 			BufferAlgorithm:           "",
 			AvailableBufferAlgorithms: availableBufferAlgorithms,
-			Ver:    versionFloat,
-			UsbPid: item.IdProduct,
-			UsbVid: item.IdVendor,
+			Ver:                       versionFloat,
+			UsbPid:                    item.IdProduct,
+			UsbVid:                    item.IdVendor,
 		}
 
 		// if we have meta data for this port, use it
 		if len(metaports) > 0 {
-			setMetaData(&spl.SerialPorts[ctr], metaports)
+			setMetaData(&newPort, metaports)
 		}
 
 		// figure out if port is open
 		//spl.SerialPorts[ctr].IsOpen = false
-		myport, isFound := findPortByName(item.Name)
+		myport, isFound := findPortByName(newPort.Name)
 
 		if isFound {
 			// we found our port
-			spl.SerialPorts[ctr].IsOpen = true
-			spl.SerialPorts[ctr].Baud = myport.portConf.Baud
-			spl.SerialPorts[ctr].BufferAlgorithm = myport.BufferType
-			spl.SerialPorts[ctr].IsPrimary = myport.IsPrimary
-			spl.SerialPorts[ctr].FeedRateOverride = myport.feedRateOverride
+			newPort.IsOpen = true
+			newPort.Baud = myport.portConf.Baud
+			newPort.BufferAlgorithm = myport.BufferType
+			newPort.IsPrimary = myport.IsPrimary
+			newPort.FeedRateOverride = myport.feedRateOverride
 		}
 		//ls += "{ \"name\" : \"" + item.Name + "\", \"friendly\" : \"" + item.FriendlyName + "\" },\n"
-		ctr++
+		if newPort.UsbPid == DevoUsbPID && newPort.UsbVid == DevoUsbVID {
+			spl.SerialPorts[ctr] = newPort
+			ctr++
+		}
 	}
 
 	// we are getting a crash here, so thinking it's like a null pointer. do some further
 	// debug and set default values
 	log.Printf("About to marshal the serial port list. spl:%v", spl)
+	spl.SerialPorts = spl.SerialPorts[:ctr]
 	ls, err := json.MarshalIndent(spl, "", "\t")
 	if err != nil {
 		log.Println(err)
@@ -554,7 +559,6 @@ func spList() {
 			err.Error())
 	} else {
 		//log.Print("Printing out json byte data...")
-		//log.Print(ls)
 		h.broadcastSys <- ls
 	}
 }
