@@ -44,7 +44,7 @@ function parse_args
     while [ "$1" != "" ]; do
         case "$1" in
             -c | --connector )            build_connector;        shift;;
-            -d | --dry )                  dryRelease;          shift;;
+            -d | --dry )                  dryRelease $2 $3;       shift;;
             -r | --release )              release $2 $3;          shift;;
             -h | --help )                 usage;                  exit;; # quit and show usage
         esac
@@ -97,6 +97,7 @@ function dryRelease()
     if ! build_osx $1; then
         echo -e "\e[31m  Darwin BUILD FAILED"
     fi
+    exit
 }
 
 function release()
@@ -213,7 +214,11 @@ function build_linux()
     cd $startDir
     mkdir -p $releaseDir-$1_linux_$2/default-files
     cp -r default-files/* $releaseDir-$1_linux_$2/default-files 1>/dev/null 2>> $startDir/error.log || error $LINENO
-    env GOOS=linux GOARCH=$2 go build -tags="cli" -o $releaseDir-$1_linux_$2/feconnector 1>/dev/null 2>> $startDir/error.log  || error $LINENO
+    if [ "$2" == "arm" ] || [ "$2" == "386" ] ; then
+        env GOOS=linux GOARCH=$2 go build -tags="cli" -o $releaseDir-$1_linux_$2/feconnector 1>/dev/null 2>> $startDir/error.log  || error $LINENO
+    else
+        env GOOS=linux GOARCH=$2 go build -o $releaseDir-$1_linux_$2/feconnector 1>/dev/null 2>> $startDir/error.log  || error $LINENO
+    fi
     cd release
     tar -zcvf feconnector-$1_linux_$2.tar.gz feconnector-$1_linux_$2 1>/dev/null 2>> $startDir/error.log || error $LINENO
     cd $startDir

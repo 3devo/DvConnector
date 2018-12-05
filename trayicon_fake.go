@@ -30,17 +30,15 @@
 
 package main
 
+/**
+	No systray support for 386 and arm at the moment
+**/
 func setupSysTray(onInit func()) {
-	//no systray support for arm yet
-	select {}
+
 }
 func fillSysTray() {
-	select {}
 }
 
-func addRebootTrayElement() {
-	select {}
-}
+func onExit() {
 
-func quitSysTray() {
 }
