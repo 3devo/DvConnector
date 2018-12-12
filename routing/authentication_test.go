@@ -34,7 +34,7 @@ func TestLogin(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir)}
 
 		Convey("Given a HTTP request for /api/x/login with the incorrect user information", func() {
 			router := httprouter.New()
@@ -188,7 +188,7 @@ func TestLogout(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: true}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir), HasAuth: true}
 
 		Convey("Given a HTTP request for /api/x/logout without a authentication token and auth enabled", func() {
 			router := httprouter.New()
@@ -262,7 +262,7 @@ func TestAuthRequired(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: false}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir), HasAuth: false}
 		Convey("Given a HTTP request for /api/x/authRequired with auth disabled", func() {
 			router := httprouter.New()
 			router.GET("/api/x/authRequired", routing.AuthRequired(env))
@@ -309,7 +309,7 @@ func TestRefreshToken(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: true}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir), HasAuth: true}
 		Convey("Given a HTTP request for /api/x/refreshToken while containing a valid token", func() {
 			router := httprouter.New()
 			router.POST("/api/x/refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))

@@ -41,12 +41,12 @@ func GenerateLogResponse(logFile *models.LogFile, env *utils.Env) *LogFileRespon
 	response.Timestamp = logFile.Timestamp
 	response.UUID = logFile.UUID
 
-	logData, err := ioutil.ReadFile(filepath.Join(env.FileDir, "logs", logFile.GetFileName())) // just pass the file name
+	logData, err := ioutil.ReadFile(filepath.Join(env.DataDir, "logs", logFile.GetFileName())) // just pass the file name
 	if err == nil {
 		response.Log = string(logData)
 	}
 	if logFile.HasNote {
-		note, err := ioutil.ReadFile(filepath.Join(env.FileDir, "notes", logFile.GetFileName())) // just pass the file name
+		note, err := ioutil.ReadFile(filepath.Join(env.DataDir, "notes", logFile.GetFileName())) // just pass the file name
 		if err == nil {
 			response.Note = string(note)
 		}

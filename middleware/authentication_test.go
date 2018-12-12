@@ -39,7 +39,7 @@ func TestAuthMiddleware(t *testing.T) {
 	Convey("Setup", t, func() {
 		dir, db := PrepareDb()
 		router := httprouter.New()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir), HasAuth: true}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir), HasAuth: true}
 		req := httptest.NewRequest("GET", "/test", nil)
 		resp := httptest.NewRecorder()
 

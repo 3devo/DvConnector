@@ -46,6 +46,8 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/bob-thomas/configdir"
+
 	//"path/filepath"
 	"errors"
 	"fmt"
@@ -81,7 +83,6 @@ var (
 	scert     = flag.String("scert", "cert.pem", "https certificate file")
 	skey      = flag.String("skey", "key.pem", "https key file")
 	hibernate = flag.Bool("hibernate", false, "start hibernated")
-	files     = flag.String("files", "./files", "the directory of saved logs and notes")
 	noBrowser = flag.Bool("b", false, "Don't open the webpage")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
@@ -114,6 +115,10 @@ var (
 	db       *storm.DB
 	validate = validator.New()
 	env      *utils.Env
+
+	mainFiles = "./files"                                     // Directory for webserver and database files
+	dataDir   = configdir.DataDir("3Devo", "FeConnector")     // Directory for user files like logs and notes
+	configDir = configdir.SettingsDir("3Devo", "FeConnector") // Directory for user configuration files
 )
 
 type NullWriter int
@@ -136,21 +141,23 @@ func launchSelfLater() {
 }
 
 func main() {
+	os.MkdirAll(dataDir, os.ModePerm)
+	os.MkdirAll(configDir, os.ModePerm)
 	setupSysTray(onInit)
 }
 
 func onInit() {
 	fillSysTray()
 	newDatabase := false
-	if _, err := os.Stat(filepath.Join(*files, "database", "feconnector.db")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(mainFiles, "database", "feconnector.db")); os.IsNotExist(err) {
 		newDatabase = true
 	}
-	os.MkdirAll(filepath.Join(*files, "logs"), os.ModePerm)
-	os.MkdirAll(filepath.Join(*files, "notes"), os.ModePerm)
-	os.MkdirAll(filepath.Join(*files, "public"), os.ModePerm)
-	os.MkdirAll(filepath.Join(*files, "database"), os.ModePerm)
+	os.MkdirAll(filepath.Join(dataDir, "logs"), os.ModePerm)
+	os.MkdirAll(filepath.Join(dataDir, "notes"), os.ModePerm)
+	os.MkdirAll(filepath.Join(mainFiles, "database"), os.ModePerm)
+	os.MkdirAll(filepath.Join(mainFiles, "public"), os.ModePerm)
 
-	db, _ = storm.Open(filepath.Join(*files, "database", "feconnector.db"))
+	db, _ = storm.Open(filepath.Join(mainFiles, "database", "feconnector.db"))
 	db.Init(&models.User{})
 	db.Init(&models.BlackListedToken{})
 	db.Init(&models.Workspace{})
@@ -171,7 +178,7 @@ func onInit() {
 	db.Select(q.Lt("Expiration", time.Now().Unix())).Delete(new(models.BlackListedToken))
 
 	defer db.Close()
-	env = &utils.Env{Db: db, Validator: validate, FileDir: *files, HasAuth: usersExist}
+	env = &utils.Env{Db: db, Validator: validate, DataDir: dataDir, ConfigDir: configDir, HasAuth: usersExist}
 	/** Custom validators **/
 	validate.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 		return utils.IsValidUUID(fl.Field().String())
@@ -343,7 +350,7 @@ func onInit() {
 	router.POST(restURL+"login", routing.Login(env))
 	router.POST(restURL+"logout", middleware.AuthRequired(routing.Logout(env), env))
 
-	router.NotFound = http.FileServer(http.Dir(filepath.Join(*files, "public")))
+	router.NotFound = http.FileServer(http.Dir(filepath.Join(mainFiles, "public")))
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
 
