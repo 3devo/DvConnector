@@ -47,6 +47,7 @@ import (
 	"path/filepath"
 
 	"github.com/bob-thomas/configdir"
+	packr "github.com/gobuffalo/packr/v2"
 
 	//"path/filepath"
 	"errors"
@@ -116,7 +117,6 @@ var (
 	validate = validator.New()
 	env      *utils.Env
 
-	mainFiles = "./files"                                     // Directory for webserver and database files
 	dataDir   = configdir.DataDir("3Devo", "FeConnector")     // Directory for user files like logs and notes
 	configDir = configdir.SettingsDir("3Devo", "FeConnector") // Directory for user configuration files
 )
@@ -149,15 +149,15 @@ func main() {
 func onInit() {
 	fillSysTray()
 	newDatabase := false
-	if _, err := os.Stat(filepath.Join(mainFiles, "database", "feconnector.db")); os.IsNotExist(err) {
+	if _, err := os.Stat(filepath.Join(dataDir, "database", "feconnector.db")); os.IsNotExist(err) {
 		newDatabase = true
 	}
+	webBox := packr.New("Frontend", "./frontend")
 	os.MkdirAll(filepath.Join(dataDir, "logs"), os.ModePerm)
 	os.MkdirAll(filepath.Join(dataDir, "notes"), os.ModePerm)
-	os.MkdirAll(filepath.Join(mainFiles, "database"), os.ModePerm)
-	os.MkdirAll(filepath.Join(mainFiles, "public"), os.ModePerm)
+	os.MkdirAll(filepath.Join(dataDir, "database"), os.ModePerm)
 
-	db, _ = storm.Open(filepath.Join(mainFiles, "database", "feconnector.db"))
+	db, _ = storm.Open(filepath.Join(dataDir, "database", "feconnector.db"))
 	db.Init(&models.User{})
 	db.Init(&models.BlackListedToken{})
 	db.Init(&models.Workspace{})
@@ -350,7 +350,7 @@ func onInit() {
 	router.POST(restURL+"login", routing.Login(env))
 	router.POST(restURL+"logout", middleware.AuthRequired(routing.Logout(env), env))
 
-	router.NotFound = http.FileServer(http.Dir(filepath.Join(mainFiles, "public")))
+	router.NotFound = http.FileServer(webBox)
 	f := flag.Lookup("addr")
 	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
 
