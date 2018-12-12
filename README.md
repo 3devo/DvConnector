@@ -97,11 +97,14 @@ External dependencies
 * github.com/rs/cors
 * github.com/skratchdot/open-golang/open
 * github.com/tidwall/gjson
-
+* github.com/gobuffalo/packr2/v2
+* github.com/bob-thomas/configdir
 
 To build the golang application you can run `go build` or use the build.sh utility.
 
-To build utility can build the application and also generate + upload releases
+If you want to build and deploy you will need to use and install [packr2](https://github.com/gobuffalo/packr/tree/master/v2) and build with `packr2 build` this will package the assets into executable.
+
+The build utility can build the application and also generate + upload releases
 
 ```
     usage: ./build.sh [-c || -f || -r 0.1 \"cool release\" ||  -h

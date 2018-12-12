@@ -2,6 +2,12 @@
 
 
 [[projects]]
+  name = "github.com/BurntSushi/toml"
+  packages = ["."]
+  revision = "3012a1dbe2e4bd1391d42b32f0577cb7bbc7f005"
+  version = "v0.3.1"
+
+[[projects]]
   name = "github.com/asdine/storm"
   packages = [
     ".",
@@ -13,6 +19,12 @@
   ]
   revision = "bda68dab90fc908ee5dbccb36400edf4f54972d6"
   version = "v2.1.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/bob-thomas/configdir"
+  packages = ["."]
+  revision = "37a1c27b62863abaaf3b9ed09c524cb05b8443e1"
 
 [[projects]]
   branch = "master"
@@ -126,6 +138,90 @@
   version = "v0.16.0"
 
 [[projects]]
+  name = "github.com/gobuffalo/buffalo-plugins"
+  packages = [
+    "plugins",
+    "plugins/plugdeps"
+  ]
+  revision = "d241d5c27a4afc185a54ed1c8a23b27193459a6d"
+  version = "v1.9.3"
+
+[[projects]]
+  name = "github.com/gobuffalo/envy"
+  packages = ["."]
+  revision = "801d7253ade1f895f74596b9a96147ed2d3b087e"
+  version = "v1.6.11"
+
+[[projects]]
+  name = "github.com/gobuffalo/events"
+  packages = ["."]
+  revision = "737cbff69244d23760f88158381db90594b0c33c"
+  version = "v1.1.8"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/flect"
+  packages = [
+    ".",
+    "name"
+  ]
+  revision = "24a2b68e0316dd16128e820c3d60c89ed09911b0"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/genny"
+  packages = [
+    ".",
+    "movinglater/gotools",
+    "movinglater/gotools/goimports",
+    "movinglater/gotools/gomods"
+  ]
+  revision = "e26c8466f14d166c788e19ae99c5f077f9ea160b"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/logger"
+  packages = ["."]
+  revision = "5b956e21995cbed3ab29e4901f9e746a6a1d53bb"
+
+[[projects]]
+  name = "github.com/gobuffalo/mapi"
+  packages = ["."]
+  revision = "09ac528b16b7e871fe0f14d4867a07820a30a14b"
+  version = "v1.0.1"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/meta"
+  packages = ["."]
+  revision = "0d7e59dd540b2ef77f8dd051c596c8b6f8c660f9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/packd"
+  packages = ["."]
+  revision = "eca3b8fd66872a76119b189bbe0f58f776a2a39f"
+
+[[projects]]
+  name = "github.com/gobuffalo/packr"
+  packages = [
+    "v2",
+    "v2/file",
+    "v2/file/resolver",
+    "v2/file/resolver/encoding/hex",
+    "v2/jam/parser",
+    "v2/plog"
+  ]
+  revision = "679459352e18b4c74274a979d695fe13b68730c1"
+  version = "v1.21.9"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/gobuffalo/syncx"
+  packages = ["."]
+  revision = "558ac7de985fc4f4057bff27c7bdf99e92fe0750"
+
+[[projects]]
   branch = "master"
   name = "github.com/golang/glog"
   packages = ["."]
@@ -150,6 +246,18 @@
   version = "v1.2.0"
 
 [[projects]]
+  name = "github.com/inconshreveable/mousetrap"
+  packages = ["."]
+  revision = "76626ae9c91c4f2a10f34cad8ce83ea42c93bb75"
+  version = "v1.0"
+
+[[projects]]
+  name = "github.com/joho/godotenv"
+  packages = ["."]
+  revision = "23d116af351c84513e1946b527c88823e476be13"
+  version = "v1.3.0"
+
+[[projects]]
   name = "github.com/jtolds/gls"
   packages = ["."]
   revision = "77f18212c9c7edc9bd6a33d383a7b545ce62f064"
@@ -168,6 +276,12 @@
   revision = "ae77be60afb1dcacde03767a8c37337fad28ac14"
 
 [[projects]]
+  name = "github.com/karrick/godirwalk"
+  packages = ["."]
+  revision = "cceff240ca8af695e41738831646717e80d2f846"
+  version = "v1.7.7"
+
+[[projects]]
   branch = "master"
   name = "github.com/kidoman/embd"
   packages = [
@@ -182,6 +296,24 @@
 
 [[projects]]
   branch = "master"
+  name = "github.com/logrusorgru/aurora"
+  packages = ["."]
+  revision = "a7b3b318ed4e1ae5b80602b08627267303c68572"
+
+[[projects]]
+  branch = "master"
+  name = "github.com/markbates/oncer"
+  packages = ["."]
+  revision = "bf2de49a0be218916e69a11d22866e6cd0a560f2"
+
+[[projects]]
+  name = "github.com/markbates/safe"
+  packages = ["."]
+  revision = "6fea05a5732486546a4836b7a1d596c5ec687b98"
+  version = "v1.0.1"
+
+[[projects]]
+  branch = "master"
   name = "github.com/meatballhat/negroni-logrus"
   packages = ["."]
   revision = "31067281800f66f57548a7a32d9c6c5f963fef83"
@@ -193,16 +325,26 @@
   revision = "4e1c5567d7c2dd59fa4c7c83d34c2f3528b025d6"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
+  name = "github.com/rogpeppe/go-internal"
+  packages = [
+    "modfile",
+    "module",
+    "semver"
+  ]
+  revision = "d87f08a7d80821c797ffc8eb8f4e01675f378736"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/rs/cors"
   packages = ["."]
   revision = "ca016a06a5753f8ba03029c0aa5e54afb1bf713f"
   version = "v1.4.0"
-
-[[projects]]
-  name = "github.com/satori/go.uuid"
-  packages = ["."]
-  revision = "f58768cc1a7a7e77a3bd49e98cdd21419399b6a3"
-  version = "v1.2.0"
 
 [[projects]]
   name = "github.com/sirupsen/logrus"
@@ -237,6 +379,18 @@
   version = "1.6.3"
 
 [[projects]]
+  name = "github.com/spf13/cobra"
+  packages = ["."]
+  revision = "ef82de70bb3f60c65fb8eebacbb2d122ef517385"
+  version = "v0.0.3"
+
+[[projects]]
+  name = "github.com/spf13/pflag"
+  packages = ["."]
+  revision = "298182f68c66c05229eb03ac171abe6e309ee79a"
+  version = "v1.0.3"
+
+[[projects]]
   name = "github.com/tidwall/gjson"
   packages = ["."]
   revision = "f123b340873a0084cb27267eddd8ff615115fbff"
@@ -258,6 +412,8 @@
   branch = "master"
   name = "golang.org/x/crypto"
   packages = [
+    "bcrypt",
+    "blowfish",
     "curve25519",
     "ed25519",
     "ed25519/internal/edwards25519",
@@ -279,6 +435,23 @@
   revision = "ac767d655b305d4e9612f5f6e33120b9176c4ad4"
 
 [[projects]]
+  branch = "master"
+  name = "golang.org/x/tools"
+  packages = [
+    "go/ast/astutil",
+    "go/gcexportdata",
+    "go/internal/cgo",
+    "go/internal/gcimporter",
+    "go/packages",
+    "go/types/typeutil",
+    "imports",
+    "internal/fastwalk",
+    "internal/gopathwalk",
+    "internal/semver"
+  ]
+  revision = "d4971274fe382404aee0e8c163af974f2bf738e6"
+
+[[projects]]
   name = "gopkg.in/go-playground/validator.v9"
   packages = ["."]
   revision = "ab2a8a99087e827c9af87ed6777ba897348fb178"
@@ -287,6 +460,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "cb2ce34bf83f24bc8b3f9486b2d68cb5b08c4597a7f156cda11cf52bcda51c0f"
+  inputs-digest = "5284ee881ce5865d306848719e67f0b93deacd45a6a096bd6107769a15802d8e"
   solver-name = "gps-cdcl"
   solver-version = 1
