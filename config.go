@@ -1,6 +1,6 @@
 package main
 
 const (
-	DevoUsbPID = "ea60"
-	DevoUsbVID = "10c4"
+	DevoUsbPID = "0C5B"
+	DevoUsbVID = "16D0"
 )
