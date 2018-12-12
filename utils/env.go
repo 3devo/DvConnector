@@ -6,7 +6,8 @@ import (
 )
 
 type Env struct {
-	FileDir   string
+	DataDir   string
+	ConfigDir string
 	Db        *storm.DB
 	Validator *validator.Validate
 	HasAuth   bool

@@ -26,7 +26,7 @@ func TestGetSingleWorkspace(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir)}
 		Convey("Given a HTTP request for /api/x/workspaces/550e8400-e29b-41d4-a716-446655440000", func() {
 
 			router := httprouter.New()
@@ -81,7 +81,7 @@ func TestGetMultipleWorkspaces(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir)}
 
 		Convey("Given a HTTP request for api/x/workspaces", func() {
 			router := httprouter.New()
@@ -215,7 +215,7 @@ func TestCreateWorkspace(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: dir}
 
 		updateBody := &responses.WorkspaceCreationBody{Data: workspaces[0]}
 		updateBody.Data.UUID = "550e8400-e29b-41d4-a716-446655440003"
@@ -361,7 +361,7 @@ func TestUpdateWorkspace(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: path.Dir(dir)}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir)}
 
 		env.Validator.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 			return utils.IsValidUUID(fl.Field().String())
@@ -508,7 +508,7 @@ func TestDeleteWorkspace(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), FileDir: dir}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: dir}
 		router := httprouter.New()
 		Convey("Given a HTTP DELETE request for api/x/workspaces/uuid with a known uuid", func() {
 			router.DELETE("/api/x/workspaces/:uuid", routing.DeleteWorkspace(env))
