@@ -137,16 +137,14 @@ func AuthRequired(env *utils.Env) httprouter.Handle {
 //	200: body:LoginSuccessResponse
 func RefreshToken(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		if env.HasAuth {
-			response := responses.LoginSuccess{}
-			expiration := time.Unix(r.Context().Value("expiration").(int64), 0).Add(time.Minute * time.Duration(utils.StandardTokenExpiration)).Unix()
-			token, _ := utils.GenerateJWTToken(r.Context().Value("userId").(string), expiration)
-			response.Data.Token = token
-			env.Db.Save(&models.BlackListedToken{
-				Token:      r.Context().Value("token").(string),
-				Expiration: r.Context().Value("expiration").(int64)})
-			json.NewEncoder(w).Encode(response.Data)
-		}
+		response := responses.LoginSuccess{}
+		expiration := time.Unix(r.Context().Value("expiration").(int64), 0).Add(time.Minute * time.Duration(utils.StandardTokenExpiration)).Unix()
+		token, _ := utils.GenerateJWTToken(r.Context().Value("userId").(string), expiration)
+		response.Data.Token = token
+		env.Db.Save(&models.BlackListedToken{
+			Token:      r.Context().Value("token").(string),
+			Expiration: r.Context().Value("expiration").(int64)})
+		json.NewEncoder(w).Encode(response.Data)
 		w.WriteHeader(http.StatusOK)
 	}
 }
