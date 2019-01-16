@@ -5,11 +5,9 @@ package main
 import (
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/3devo/feconnector/icon"
 	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/utils"
 	"github.com/getlantern/systray"
 	"github.com/skratchdot/open-golang/open"
 )
@@ -29,8 +27,7 @@ func fillSysTray() {
 		for {
 			select {
 			case <-mOpen.ClickedCh:
-				token, _ := utils.GenerateJWTToken("browser", time.Now().Add(time.Minute*time.Duration(utils.StandardTokenExpiration)).Unix())
-				open.Run("http://localhost:8989?token=" + token)
+				launchBrowserWithToken()
 			case <-mAbout.ClickedCh:
 				open.Run("https://3devo.com/support/")
 			case <-mReset.ClickedCh:

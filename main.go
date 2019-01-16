@@ -78,7 +78,7 @@ import (
 var (
 	version      = "0.1.0"
 	versionFloat = float32(0.1)
-	addr         = flag.String("addr", ":8989", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
+	port         = flag.String("port", "8989", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	//	addr  = flag.String("addr", ":8980", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	saddr     = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
 	scert     = flag.String("scert", "cert.pem", "https certificate file")
@@ -113,10 +113,10 @@ var (
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
-	db       *storm.DB
-	validate = validator.New()
-	env      *utils.Env
-
+	db        *storm.DB
+	validate  = validator.New()
+	env       *utils.Env
+	ip        string
 	dataDir   = configdir.DataDir("3Devo", "FeConnector")     // Directory for user files like logs and notes
 	configDir = configdir.SettingsDir("3Devo", "FeConnector") // Directory for user configuration files
 )
@@ -138,6 +138,11 @@ func launchSelfLater() {
 	log.Println("Going to launch myself 5 seconds later.")
 	time.Sleep(2 * 1000 * time.Millisecond)
 	log.Println("Done waiting 5 secs. Now launching...")
+}
+
+func launchBrowserWithToken() {
+	token, _ := utils.GenerateJWTToken("browser", time.Now().Add(time.Minute*time.Duration(utils.StandardTokenExpiration)).Unix())
+	open.Run("http://" + ip + ":" + *port + "/#/?token=" + token)
 }
 
 func main() {
@@ -214,10 +219,9 @@ func onInit() {
 	// see if we are supposed to wait 5 seconds
 	if *isLaunchSelf {
 		launchSelfLater()
-	} else {
-		if !*noBrowser {
-			open.Run("http://localhost:8989")
-		}
+	}
+	if !*noBrowser {
+		launchBrowserWithToken()
 	}
 
 	// see if they want to just create startup script
@@ -250,11 +254,6 @@ func onInit() {
 
 	if *isAllowExec {
 		log.Println("Enabling exec commands because you passed in -allowexec")
-	}
-
-	ip, err := externalIP()
-	if err != nil {
-		log.Println(err)
 	}
 
 	//homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
@@ -351,8 +350,8 @@ func onInit() {
 	router.POST(restURL+"logout", middleware.AuthRequired(routing.Logout(env), env))
 
 	router.NotFound = http.FileServer(webBox)
-	f := flag.Lookup("addr")
-	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
+	f := flag.Lookup("port")
+	log.Println("Starting http server and websocket on " + ip + ":" + f.Value.String())
 
 	/** Hook in middlewares */
 	negroniMiddleware := negroni.New()

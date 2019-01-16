@@ -16,9 +16,8 @@ To use it as a fully fledged application you need to download a release from the
 To use the feconnector executable there are is the standard way of just executing it but if you want more fine grain control of the port or folder it selects you can use flags to define those variables.
 
 ```
-  -addr string
-        http service address. example :8800 to run on port 8800, example 10.0.0.2:9000
-        to run on specific IP address and port, example 10.0.0.2 to run on specific IP
+  -port string
+        http service address. example 8800 to run on port 8800
         address (default ":8989")
 
   -allowexec

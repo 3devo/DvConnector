@@ -316,7 +316,7 @@ func restart() {
 		cmd = exec.Command(exePath, "-ls", "-addr", *addr, "-regex", *regExpFilter)
 
 	}*/
-	cmd = exec.Command(exePath, "-ls", "-addr", *addr, "-regex", *regExpFilter, "-gc", *gcType)
+	cmd = exec.Command(exePath, "-ls", "-port", *port, "-regex", *regExpFilter, "-gc", *gcType)
 
 	//cmd := exec.Command("./serial-port-json-server", "ls")
 	err := cmd.Start()
