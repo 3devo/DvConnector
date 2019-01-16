@@ -169,15 +169,22 @@ func onInit() {
 	db.Init(&models.Sheet{})
 	db.Init(&models.Chart{})
 	db.Init(&models.LogFile{})
+	db.Init(&models.Config{})
 	if newDatabase {
 		log.Println("filling database with default values")
 		FillDatabase(db)
 	}
 	var users []models.User
+	var config models.Config
+	db.One("ID", 1, &config)
+
 	usersExist := false
 	db.All(&users)
 	if len(users) > 0 {
 		usersExist = true
+	} else {
+		config.OpenNetwork = false
+		db.Save(&config)
 	}
 	// Delete expired tokens
 	db.Select(q.Lt("Expiration", time.Now().Unix())).Delete(new(models.BlackListedToken))
@@ -215,6 +222,12 @@ func onInit() {
 
 	// setup logging
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+
+	if config.OpenNetwork {
+		ip, _ = externalIP()
+	} else {
+		ip = "localhost"
+	}
 
 	// see if we are supposed to wait 5 seconds
 	if *isLaunchSelf {
@@ -343,6 +356,10 @@ func onInit() {
 	router.DELETE(restURL+"users/:uuid", middleware.AuthRequired(routing.DeleteUser(env), env))
 	router.PUT(restURL+"users/:uuid", middleware.AuthRequired(routing.UpdateUser(env), env))
 
+	/**	CONFIG ROUTING */
+	router.GET(restURL+"config", middleware.AuthRequired(routing.GetConfig(env), env))
+	router.PUT(restURL+"config", middleware.AuthRequired(routing.UpdateConfig(env), env))
+
 	/**	AUTH ROUTING */
 	router.GET(restURL+"authRequired", routing.AuthRequired(env))
 	router.POST(restURL+"refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))
@@ -359,15 +376,18 @@ func onInit() {
 	negroniMiddleware.Use(cors.AllowAll())
 	negroniMiddleware.UseHandler(router)
 
-	go startHttp(ip, negroniMiddleware)
+	go startHttp(ip, config, negroniMiddleware)
 	ch := make(chan bool)
 	<-ch
 }
 
-func startHttp(ip string, h http.Handler) {
-	f := flag.Lookup("addr")
-	log.Println("Starting http server and websocket on " + ip + "" + f.Value.String())
-	if err := http.ListenAndServe(*addr, h); err != nil {
+func startHttp(ip string, config models.Config, h http.Handler) {
+	log.Println("Starting http server and websocket on " + ip + ":" + *port)
+	serveInterfaces := ":" + *port
+	if !config.OpenNetwork {
+		serveInterfaces = ip + ":" + *port
+	}
+	if err := http.ListenAndServe(serveInterfaces, h); err != nil {
 		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
 		log.Fatal("Error ListenAndServe:", err)
 	}

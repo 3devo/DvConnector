@@ -37,6 +37,12 @@ func fillSysTray() {
 					env.Db.DeleteStruct(&user)
 				}
 				env.HasAuth = false
+
+				// set network back to false when deleting a user
+				var config models.Config
+				db.One("ID", 1, &config)
+				config.OpenNetwork = false
+				db.Save(&config)
 			case <-mQuit.ClickedCh:
 				fmt.Println("Requesting quit")
 				systray.Quit()
