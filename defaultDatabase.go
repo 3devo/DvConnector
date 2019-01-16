@@ -9,8 +9,12 @@ import (
 	packr "github.com/gobuffalo/packr/v2"
 )
 
+// FillDatabase fills the database with default values
 func FillDatabase(Db *storm.DB) {
 	box := packr.New("default-files", "./default-files")
+	temp := models.Config{
+		OpenNetwork: false}
+	Db.Save(&temp)
 	for _, file := range box.List() {
 		fileBody, _ := box.Find(file)
 		if strings.HasPrefix(file, "charts") {
