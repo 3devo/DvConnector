@@ -48,17 +48,6 @@ func TestAuthMiddleware(t *testing.T) {
 		defer db.Close()
 		defer os.RemoveAll(dir)
 
-		Convey("Request /test when auth is disabled", func() {
-			env.HasAuth = false
-			router.ServeHTTP(resp, req)
-			Convey("Should return OK and let the request pass", func() {
-				result := resp.Result()
-				body, _ := ioutil.ReadAll(result.Body)
-				So(result.StatusCode, ShouldEqual, http.StatusOK)
-				So(string(body), ShouldEqual, "ok")
-			})
-		})
-
 		Convey("Request /test without authorization access", func() {
 			router.ServeHTTP(resp, req)
 			Convey("Should respond with unauthorized", func() {

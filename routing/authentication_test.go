@@ -347,20 +347,5 @@ func TestRefreshToken(t *testing.T) {
 				So(string(body), ShouldResemble, "Unauthorized\n")
 			})
 		})
-
-		Convey("Given a HTTP request for /api/x/refreshToken while authEnabled is false", func() {
-			router := httprouter.New()
-			env.HasAuth = false
-			router.POST("/api/x/refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))
-			req := httptest.NewRequest("POST", "/api/x/refreshToken", nil)
-			resp := httptest.NewRecorder()
-
-			router.ServeHTTP(resp, req)
-
-			Convey("Should return unauthorized", func() {
-				result := resp.Result()
-				So(result.StatusCode, ShouldResemble, 200)
-			})
-		})
 	})
 }

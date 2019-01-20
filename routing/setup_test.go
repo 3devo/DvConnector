@@ -113,8 +113,8 @@ func CreateChart(chart *models.Chart) models.Chart {
 			Title: "title",
 			Range: []int{0, 2000}}}
 
-	chart.HorizontalRulers = []models.Ruler{}
-	chart.VerticalRulers = []models.Ruler{}
+	chart.HorizontalRulers = []models.HRuler{}
+	chart.VerticalRulers = []models.VRuler{}
 	chart.Image = "data:image/gif;base64,R0lG"
 	return *chart
 }
