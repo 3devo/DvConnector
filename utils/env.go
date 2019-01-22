@@ -2,7 +2,7 @@ package utils
 
 import (
 	"github.com/asdine/storm"
-	"gopkg.in/go-playground/validator.v9"
+	validator "gopkg.in/go-playground/validator.v9"
 )
 
 type Env struct {
@@ -10,5 +10,4 @@ type Env struct {
 	ConfigDir string
 	Db        *storm.DB
 	Validator *validator.Validate
-	HasAuth   bool
 }

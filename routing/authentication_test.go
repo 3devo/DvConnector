@@ -2,7 +2,6 @@ package routing_test
 
 import (
 	"encoding/json"
-	"errors"
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
@@ -188,7 +187,7 @@ func TestLogout(t *testing.T) {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir), HasAuth: true}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir)}
 
 		Convey("Given a HTTP request for /api/x/logout without a authentication token and auth enabled", func() {
 			router := httprouter.New()
@@ -203,31 +202,6 @@ func TestLogout(t *testing.T) {
 				body, _ := ioutil.ReadAll(result.Body)
 
 				So(string(body), ShouldResemble, "Unauthorized\n")
-			})
-		})
-
-		Convey("Given a HTTP request for /api/x/logout with token but no auth required", func() {
-			env.HasAuth = false
-			router := httprouter.New()
-			router.POST("/api/x/logout", middleware.AuthRequired(routing.Logout(env), env))
-			req := httptest.NewRequest("POST", "/api/x/logout", nil)
-			token, _ := utils.GenerateJWTToken("uuid", time.Now().Add(time.Minute*time.Duration(utils.StandardTokenExpiration)).Unix())
-			req.Header.Add("Authorization", "bearer "+token)
-
-			resp := httptest.NewRecorder()
-
-			router.ServeHTTP(resp, req)
-
-			Convey("The response should return OK and do nothing", func() {
-				result := resp.Result()
-				body, _ := ioutil.ReadAll(result.Body)
-				response := responses.ResourceStatusResponse{}
-				response.Body.Code = http.StatusOK
-				response.Body.Resource = "Authentication"
-				response.Body.Action = "LOGOUT"
-				expected, _ := json.Marshal(response.Body)
-				So(db.One("Token", token, &models.BlackListedToken{}), ShouldResemble, errors.New("not found"))
-				So(string(body), ShouldResemble, string(append(expected, 10)))
 			})
 		})
 
@@ -257,59 +231,12 @@ func TestLogout(t *testing.T) {
 	})
 }
 
-func TestAuthRequired(t *testing.T) {
-	Convey("Setup", t, func() {
-		dir, db := PrepareDb()
-		defer os.RemoveAll(dir)
-		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir), HasAuth: false}
-		Convey("Given a HTTP request for /api/x/authRequired with auth disabled", func() {
-			router := httprouter.New()
-			router.GET("/api/x/authRequired", routing.AuthRequired(env))
-			req := httptest.NewRequest("GET", "/api/x/authRequired", nil)
-			resp := httptest.NewRecorder()
-
-			router.ServeHTTP(resp, req)
-
-			Convey("The response should return enabled false and return OK", func() {
-				result := resp.Result()
-				body, _ := ioutil.ReadAll(result.Body)
-				response := responses.AuthEnabledResponse{Enabled: false}
-
-				expected, _ := json.Marshal(response)
-
-				So(string(body), ShouldResemble, string(append(expected, 10)))
-			})
-		})
-
-		Convey("Given a HTTP request for /api/x/authRequired with auth enabled", func() {
-			env.HasAuth = true
-			router := httprouter.New()
-			router.GET("/api/x/authRequired", routing.AuthRequired(env))
-			req := httptest.NewRequest("GET", "/api/x/authRequired", nil)
-			resp := httptest.NewRecorder()
-
-			router.ServeHTTP(resp, req)
-
-			Convey("The response should return enabled false and return OK", func() {
-				result := resp.Result()
-				body, _ := ioutil.ReadAll(result.Body)
-				response := responses.AuthEnabledResponse{Enabled: true}
-
-				expected, _ := json.Marshal(response)
-
-				So(string(body), ShouldResemble, string(append(expected, 10)))
-			})
-		})
-	})
-}
-
 func TestRefreshToken(t *testing.T) {
 	Convey("Setup", t, func() {
 		dir, db := PrepareDb()
 		defer os.RemoveAll(dir)
 		defer db.Close()
-		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir), HasAuth: true}
+		env := &utils.Env{Db: db, Validator: validator.New(), DataDir: path.Dir(dir)}
 		Convey("Given a HTTP request for /api/x/refreshToken while containing a valid token", func() {
 			router := httprouter.New()
 			router.POST("/api/x/refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))

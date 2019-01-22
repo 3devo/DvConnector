@@ -68,7 +68,6 @@ func CreateUser(env *utils.Env) httprouter.Handle {
 				"CREATE",
 				"",
 				w)
-			env.HasAuth = true
 		}
 	}
 }
@@ -167,8 +166,6 @@ func DeleteUser(env *utils.Env) httprouter.Handle {
 			"DELETE",
 			"",
 			w)
-		env.HasAuth = false
-
 	}
 }
 

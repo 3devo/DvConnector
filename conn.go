@@ -31,33 +31,29 @@ func (c *connection) reader(env *utils.Env) {
 		if err != nil {
 			break
 		}
-		if env.HasAuth {
-			if c.authenticated {
-				h.broadcast <- message
-			} else {
-				auth := strings.SplitN(string(message), " ", 2)
-				if len(auth) == 2 && auth[0] == "login" && !c.authenticated {
-					_, err := utils.ValidateJWTToken(auth[1])
-					if err != nil {
-						c.ws.WriteMessage(websocket.TextMessage, []byte("unauthorized"))
-						c.ws.Close()
-						return
-					}
-					blacklist := models.BlackListedToken{}
-					if err := env.Db.One("Token", auth[1], &blacklist); err == nil {
-						c.ws.WriteMessage(websocket.TextMessage, []byte("unauthorized"))
-						c.ws.Close()
-						return
-					}
-					c.ws.WriteMessage(websocket.TextMessage, []byte("Access granted"))
-					c.authenticated = true
-				} else if !c.authenticated {
+		if c.authenticated {
+			h.broadcast <- message
+		} else {
+			auth := strings.SplitN(string(message), " ", 2)
+			if len(auth) == 2 && auth[0] == "login" && !c.authenticated {
+				_, err := utils.ValidateJWTToken(auth[1])
+				if err != nil {
 					c.ws.WriteMessage(websocket.TextMessage, []byte("unauthorized"))
 					c.ws.Close()
+					return
 				}
+				blacklist := models.BlackListedToken{}
+				if err := env.Db.One("Token", auth[1], &blacklist); err == nil {
+					c.ws.WriteMessage(websocket.TextMessage, []byte("unauthorized"))
+					c.ws.Close()
+					return
+				}
+				c.ws.WriteMessage(websocket.TextMessage, []byte("Access granted"))
+				c.authenticated = true
+			} else if !c.authenticated {
+				c.ws.WriteMessage(websocket.TextMessage, []byte("unauthorized"))
+				c.ws.Close()
 			}
-		} else {
-			h.broadcast <- message
 		}
 	}
 	c.ws.Close()
@@ -65,7 +61,7 @@ func (c *connection) reader(env *utils.Env) {
 
 func (c *connection) writer(env *utils.Env) {
 	for message := range c.send {
-		if c.authenticated || !env.HasAuth {
+		if c.authenticated {
 			err := c.ws.WriteMessage(websocket.TextMessage, message)
 			if err != nil {
 				break

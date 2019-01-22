@@ -178,19 +178,20 @@ func onInit() {
 	var config models.Config
 	db.One("ID", 1, &config)
 
-	usersExist := false
 	db.All(&users)
 	if len(users) > 0 {
-		usersExist = true
+		config.UserCreated = true
 	} else {
+
 		config.OpenNetwork = false
-		db.Save(&config)
+		config.UserCreated = false
 	}
+	db.Save(&config)
 	// Delete expired tokens
 	db.Select(q.Lt("Expiration", time.Now().Unix())).Delete(new(models.BlackListedToken))
 
 	defer db.Close()
-	env = &utils.Env{Db: db, Validator: validate, DataDir: dataDir, ConfigDir: configDir, HasAuth: usersExist}
+	env = &utils.Env{Db: db, Validator: validate, DataDir: dataDir, ConfigDir: configDir}
 	/** Custom validators **/
 	validate.RegisterValidation("uuid", func(fl validator.FieldLevel) bool {
 		return utils.IsValidUUID(fl.Field().String())
@@ -357,11 +358,10 @@ func onInit() {
 	router.PUT(restURL+"users/:uuid", middleware.AuthRequired(routing.UpdateUser(env), env))
 
 	/**	CONFIG ROUTING */
-	router.GET(restURL+"config", middleware.AuthRequired(routing.GetConfig(env), env))
+	router.GET(restURL+"config", routing.GetConfig(env))
 	router.PUT(restURL+"config", middleware.AuthRequired(routing.UpdateConfig(env), env))
 
 	/**	AUTH ROUTING */
-	router.GET(restURL+"authRequired", routing.AuthRequired(env))
 	router.POST(restURL+"refreshToken", middleware.AuthRequired(routing.RefreshToken(env), env))
 	router.POST(restURL+"login", routing.Login(env))
 	router.POST(restURL+"logout", middleware.AuthRequired(routing.Logout(env), env))

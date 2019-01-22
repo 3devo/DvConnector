@@ -21,7 +21,7 @@ func fillSysTray() {
 	systray.SetTitle("3devo serial monitor")
 	mOpen := systray.AddMenuItem("Open Monitor", "Opens the serial monitor")
 	mAbout := systray.AddMenuItem("About", "About this application")
-	mReset := systray.AddMenuItem("Reset user", "Resets the user accounts")
+	mReset := systray.AddMenuItem("Reset user (Requires restart)", "Resets the user accounts (Requires restart)")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 	go func() {
 		for {
@@ -36,13 +36,13 @@ func fillSysTray() {
 				for _, user := range users {
 					env.Db.DeleteStruct(&user)
 				}
-				env.HasAuth = false
-
 				// set network back to false when deleting a user
 				var config models.Config
 				db.One("ID", 1, &config)
 				config.OpenNetwork = false
+				config.UserCreated = false
 				db.Save(&config)
+
 			case <-mQuit.ClickedCh:
 				fmt.Println("Requesting quit")
 				systray.Quit()

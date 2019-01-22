@@ -5,4 +5,5 @@ package models
 type Config struct {
 	ID          int  `storm:"id,increment" json:"id"`
 	OpenNetwork bool `json:"openNetwork"`
+	UserCreated bool `json:"userCreated"`
 }

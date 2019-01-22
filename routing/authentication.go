@@ -89,15 +89,13 @@ func Login(env *utils.Env) httprouter.Handle {
 //	200:
 func Logout(env *utils.Env) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		if env.HasAuth {
-			regex := regexp.MustCompile("bearer (.*)")
-			token := regex.FindStringSubmatch(r.Header.Get("Authorization"))
-			if len(token) > 0 {
+		regex := regexp.MustCompile("bearer (.*)")
+		token := regex.FindStringSubmatch(r.Header.Get("Authorization"))
+		if len(token) > 0 {
 
-				env.Db.Save(&models.BlackListedToken{
-					Token:      token[1],
-					Expiration: r.Context().Value("expiration").(int64)})
-			}
+			env.Db.Save(&models.BlackListedToken{
+				Token:      token[1],
+				Expiration: r.Context().Value("expiration").(int64)})
 		}
 		responses.WriteResourceStatusResponse(
 			http.StatusOK,
@@ -105,24 +103,6 @@ func Logout(env *utils.Env) httprouter.Handle {
 			"LOGOUT",
 			"",
 			w)
-	}
-}
-
-// AuthRequired returns true or false based if a user already exists
-// swagger:route GET /authRequired Authentication required
-//
-// Handler to check if authentication is needed
-//
-// Returns `{enabled: true|false}`` depending on if auth is enabled
-// Produces
-//	application/json
-// Responses:
-//	200: body:AuthEnabledResponse
-func AuthRequired(env *utils.Env) httprouter.Handle {
-	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		authEnabledResponse := responses.AuthEnabledResponse{Enabled: env.HasAuth}
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(authEnabledResponse)
 	}
 }
 
