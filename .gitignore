@@ -8,6 +8,7 @@ serial-port-json-server
 snapshot/*
 
 *.exe
+*.syso
 
 release/*
 files

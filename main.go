@@ -2,7 +2,8 @@
 // Version POC - FeConnector
 // Supports Windows, Linux, Mac, and Raspberry Pi, Beagle Bone Black
 
-//go:generate swagger generate spec -m -o swagger.json
+////go:generate swagger generate spec -m -o swagger.json
+//go:generate goversioninfo
 
 // Package classification FeConnector API.
 //

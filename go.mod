@@ -3,6 +3,7 @@ module github.com/3devo/feconnector
 require (
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Sereal/Sereal v0.0.0-20190110175625-d6cf5b5efa3b // indirect
+	github.com/akavel/rsrc v0.0.0-20170831122431-f6a15ece2cfd // indirect
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/bob-thomas/configdir v0.0.0-20181219095810-37a1c27b6286
 	github.com/bob-thomas/go-serial v0.0.0-20180319113759-0f9c45f81e71
@@ -40,6 +41,7 @@ require (
 	github.com/gorilla/websocket v1.4.0
 	github.com/inconshreveable/mousetrap v1.0.0
 	github.com/joho/godotenv v1.3.0
+	github.com/josephspurrier/goversioninfo v0.0.0-20190123074621-6dac90912ffa // indirect
 	github.com/jtolds/gls v0.0.0-20181110203027-b4936e06046b
 	github.com/julienschmidt/httprouter v0.0.0-20181021223831-26a05976f9bf
 	github.com/kardianos/osext v0.0.0-20170510131534-ae77be60afb1
