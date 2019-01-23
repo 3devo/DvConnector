@@ -62,7 +62,7 @@ func (logFile *LogFile) UpdateLogFile(name string, note string, env *utils.Env) 
 // AppendLog appends new information to an already existing log file.
 func (logFile *LogFile) AppendLog(logData string, env *utils.Env) error {
 	if logData != "" {
-		f, err := os.OpenFile(filepath.Join(env.DataDir, "logs", logFile.GetFileName()), os.O_APPEND, os.ModePerm)
+		f, err := os.OpenFile(filepath.Join(env.DataDir, "logs", logFile.GetFileName()), os.O_APPEND|os.O_WRONLY, os.ModePerm)
 		if err == nil {
 			f.WriteString(logData)
 			f.Sync()
