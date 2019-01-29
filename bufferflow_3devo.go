@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -51,6 +52,12 @@ func (b *Bufferflow3Devo) Init() {
 	b.manualLock = &sync.Mutex{}
 	b.Input = make(chan string)
 	b.BufferMax = 2
+	// The 3devo log system starts chart data logging with as first character being a digit
+	// For now we can hardcode this check
+	logStartRegex := regexp.MustCompile(`^\d.*`)
+	// The 3devo log format (01-29-2019) consists of 36 tab spaced items of which the 30th is a status text and the others are numbers
+	validateLogRegex := regexp.MustCompile(`(?:\d+(?:\.\d+|)\t){29}(?:\w+\t)(?:\d+(?:\.\d+|)(?:\t|)){6}`)
+
 	query := db.Select().Limit(1).OrderBy("Timestamp").Reverse()
 	var logFile = models.LogFile{}
 	err := query.First(&logFile)
@@ -58,6 +65,7 @@ func (b *Bufferflow3Devo) Init() {
 		log.Println(Red("Can not find logfile"))
 	}
 	go func() {
+		previousLine := ""
 		for data := range b.Input {
 
 			//log.Printf("Got to b.Input chan loop. data:%v\n", data)
@@ -82,21 +90,21 @@ func (b *Bufferflow3Devo) Init() {
 				continue
 			}
 
-			log.Printf("Analyzing incoming data. Start.")
+			// log.Printf("Analyzing incoming data. Start.")
 
 			// if we made it here we have lines to analyze
 			// so analyze all of them except the last line
 			for _, element := range arrLines[:len(arrLines)-1] {
 				//log.Printf("Working on element:%v, index:%v", element, index)
 				//log.Printf("Working on element:%v, index:%v", element)
-				log.Printf("\t\tData:%v", element)
+				// log.Printf("\t\tData:%v", element)
 
 				// Peek to see if the message back matches the command we just sent in
 				lastCmd, _ := b.q.Peek()
 				lastCmd = regexp.MustCompile("\n").ReplaceAllString(lastCmd, "")
 
 				cmdProcessed := false
-				log.Printf("\t\tSeeing if peek compare to lastCmd makes sense. lastCmd:\"%v\", element:\"%v\"", lastCmd, element)
+				// log.Printf("\t\tSeeing if peek compare to lastCmd makes sense. lastCmd:\"%v\", element:\"%v\"", lastCmd, element)
 				if lastCmd == element {
 					// we just got back the last command so that is a good indicator we got processed
 					log.Printf("\t\tWe got back the same command that was just sent in. That is a sign we are processed.")
@@ -148,13 +156,32 @@ func (b *Bufferflow3Devo) Init() {
 
 				// handle communication back to client
 				// for base serial data (this is not the cmd:"Write" or cmd:"Complete")
-				m := DataPerLine{b.Port, element + "\n"}
+
+				// Check if incoming data contains corruption
+				splitLine := strings.Split(element, "\t")
+				// For now only check on data that starts with a digit
+				if match := logStartRegex.MatchString(element); match == true || len(splitLine) > 2 {
+					// Bruteforced regex to check if the line matches with our current (01-29-2019) log format
+					if match = validateLogRegex.MatchString(element); match == false {
+						// If the line doesn't match swap it with the previous line and increment the time value
+						previousLineSplit := strings.Split(previousLine, "\t")
+						oldTime, _ := strconv.Atoi(previousLineSplit[0])
+						time := strconv.Itoa(oldTime + 1)
+						element = time + "\t" + strings.Join(previousLineSplit[1:], "\t")
+						log.Println(Red("Corrupt data found -> "), Blue(strings.Join(splitLine, "\t")))
+					}
+				}
+				// TODO: Make this less hardcoded by improving the loggin system of the device in general
+				previousLine = element
+				m := DataPerLine{b.Port, previousLine + "\n"}
+
 				bm, err := json.Marshal(m)
 				if err == nil {
 					err := logFile.AppendLog(m.D, env)
 					if err != nil {
 						log.Println(Red(fmt.Sprintf("Can't write to log file -> %v", logFile.GetFileName())))
 					}
+					log.Println(Green("Sending data -> "), m.D)
 					h.broadcastSys <- bm
 				}
 
@@ -163,7 +190,7 @@ func (b *Bufferflow3Devo) Init() {
 			b.bufferedOutput = arrLines[len(arrLines)-1]
 
 			b.inOutLock.Unlock()
-			log.Printf("Done with analyzing incoming data.")
+			// log.Printf("Done with analyzing incoming data.")
 
 		}
 	}()
