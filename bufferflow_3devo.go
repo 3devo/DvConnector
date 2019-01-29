@@ -34,6 +34,30 @@ type Bufferflow3Devo struct {
 	BufferMax    int
 }
 
+// generateRegexFromHeaders takes the incoming headers and matches them up with the one found in the configuration struct
+// It then creates a regex based on the format of the headers using the validator value from the configuration
+// If a header is unknown to the configuration it will throw an error
+func generateRegexFromHeaders(headers []string, knownColumns *map[string]Column) string {
+	genericMatch := `[^\t]*`
+	generatedRegex := "^"
+
+	for index, headerName := range headers {
+		if column, key := (*knownColumns)[headerName]; !key {
+			log.Println("HEADER => unknown header '" + headerName + "', defaulting to generic match regex")
+			generatedRegex += genericMatch
+		} else {
+			generatedRegex += column.Validator
+		}
+		if index < len(headers)-1 {
+			generatedRegex += `\t`
+		} else {
+			generatedRegex += `$`
+
+		}
+	}
+	return generatedRegex
+}
+
 func (b *Bufferflow3Devo) Init() {
 	log.Println("Initting timed buffer flow (output once every 16ms)")
 	b.bufferedOutput = ""
@@ -51,6 +75,11 @@ func (b *Bufferflow3Devo) Init() {
 	b.manualLock = &sync.Mutex{}
 	b.Input = make(chan string)
 	b.BufferMax = 2
+
+	var validateLogRegex *regexp.Regexp
+	initCompleted := false
+	lastTime := "0"
+
 	query := db.Select().Limit(1).OrderBy("Timestamp").Reverse()
 	var logFile = models.LogFile{}
 	err := query.First(&logFile)
@@ -87,16 +116,42 @@ func (b *Bufferflow3Devo) Init() {
 			for _, element := range arrLines[:len(arrLines)-1] {
 				//log.Printf("Working on element:%v, index:%v", element, index)
 				//log.Printf("Working on element:%v, index:%v", element)
+				// log.Printf("\t\tData:%v", element)
 
 				// handle communication back to client
 				// for base serial data (this is not the cmd:"Write" or cmd:"Complete")
+
+				// Check if incoming data contains corruption
+				splitLine := strings.Split(element, "\t")
+
+				// For now only check on data that starts with a digit
+				if initCompleted {
+					// Bruteforced regex to check if the line matches with our current (01-29-2019) log format
+					if match := validateLogRegex.MatchString(element); match == false {
+						log.Println(Red("Corrupt data found -> "), Blue(element))
+						h.broadcastSys <- []byte("{\"Cmd\":\"Error\",\"Desc\":\"Corrupt data occurred around time:" + lastTime + "\",\"Port\":\"" + b.Port + "\"}")
+						// Drop entire line
+						continue
+					} else {
+						lastTime = splitLine[0]
+					}
+				}
+
+				if !initCompleted && splitLine[0] == "Time" {
+					generatedRegex := generateRegexFromHeaders(splitLine, &KnownColumns)
+					validateLogRegex = regexp.MustCompile(generatedRegex)
+					initCompleted = true
+				}
+
 				m := DataPerLine{b.Port, element + "\n"}
+
 				bm, err := json.Marshal(m)
 				if err == nil {
 					err := logFile.AppendLog(m.D, env)
 					if err != nil {
 						log.Println(Red(fmt.Sprintf("Can't write to log file -> %v", logFile.GetFileName())))
 					}
+					log.Println(Green("Sending data -> "), m.D)
 					h.broadcastSys <- bm
 				}
 
