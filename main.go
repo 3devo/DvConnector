@@ -71,6 +71,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	negronilogrus "github.com/meatballhat/negroni-logrus"
 	"github.com/rs/cors"
+	"github.com/sirupsen/logrus"
 	"github.com/skratchdot/open-golang/open"
 	"github.com/urfave/negroni"
 	validator "gopkg.in/go-playground/validator.v9"
@@ -216,6 +217,9 @@ func onInit() {
 
 	// setup logging
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+	logrusLogger := logrus.New()
+	logrusLogger.Level = logrus.InfoLevel
+	logrusLogger.Formatter = &logrus.TextFormatter{}
 
 	if config.OpenNetwork {
 		ip, _ = externalIP()
@@ -251,11 +255,19 @@ func onInit() {
 		log.Printf("You specified a serial port regular expression filter: %v\n", *regExpFilter)
 	}
 
+	log.Println("Logs, Notes, Databases are stored at: ", env.DataDir)
 	//GetDarwinMeta()
 
+	logFile, _ := os.OpenFile(filepath.Join(env.DataDir, "systemLog.txt"), os.O_CREATE|os.O_APPEND|os.O_WRONLY, os.ModePerm)
 	if !*verbose {
 		log.Println("You can enter verbose mode to see all logging by starting with the -v command line switch.")
-		//		log.SetOutput(new(NullWriter)) //route all logging to nullwriter
+		log.Println("System log is still saved at: ", filepath.Join(env.DataDir, "systemLog.txt"))
+		log.SetOutput(logFile)
+		logrusLogger.SetOutput(logFile)
+	} else {
+		mw := io.MultiWriter(os.Stdout, logFile)
+		log.SetOutput(mw)
+		logrusLogger.SetOutput(mw)
 	}
 
 	// list serial ports
@@ -270,7 +282,6 @@ func onInit() {
 	// serial port list thread
 	go func() {
 		time.Sleep(1300 * time.Millisecond)
-		log.SetOutput(io.Writer(os.Stdout))
 		log.Println("Your serial ports:")
 		if len(portList) == 0 {
 			log.Println("\tThere are no serial ports to list.")
@@ -280,10 +291,6 @@ func onInit() {
 			setMetaDataForOsSerialPort(&element, metaports)
 			log.Printf("\t%v\n", element)
 
-		}
-		if !*verbose {
-			//log.Println("You can enter verbose mode to see all logging by starting with the -v command line switch.")
-			log.SetOutput(new(NullWriter)) //route all logging to nullwriter
 		}
 	}()
 
@@ -346,7 +353,8 @@ func onInit() {
 
 	/** Hook in middlewares */
 	negroniMiddleware := negroni.New()
-	negroniMiddleware.Use(negronilogrus.NewMiddleware())
+
+	negroniMiddleware.Use(negronilogrus.NewMiddlewareFromLogger(logrusLogger, "web"))
 	negroniMiddleware.Use(cors.AllowAll())
 	negroniMiddleware.UseHandler(router)
 
