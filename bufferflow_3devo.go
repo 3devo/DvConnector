@@ -52,11 +52,12 @@ func (b *Bufferflow3Devo) Init() {
 	b.manualLock = &sync.Mutex{}
 	b.Input = make(chan string)
 	b.BufferMax = 2
-	// The 3devo log system starts chart data logging with as first character being a digit
-	// For now we can hardcode this check
-	logStartRegex := regexp.MustCompile(`^\d.*`)
+
+	numberRegex := `-?[0-9]\d*(\.\d+)?` // Allows negative numbers as well https://stackoverflow.com/a/15814655
 	// The 3devo log format (01-29-2019) consists of 36 tab spaced items of which the 30th is a status text and the others are numbers
-	validateLogRegex := regexp.MustCompile(`(?:\d+(?:\.\d+|)\t){29}(?:\w+\t)(?:\d+(?:\.\d+|)(?:\t|)){6}`)
+	validateLogRegex := regexp.MustCompile(`(?:` + numberRegex + `?\t){29}(?:\w+\t)(?:` + numberRegex + `(?:\t|)){6}`)
+	initCompleted := false
+	previousLine := ""
 
 	query := db.Select().Limit(1).OrderBy("Timestamp").Reverse()
 	var logFile = models.LogFile{}
@@ -65,7 +66,6 @@ func (b *Bufferflow3Devo) Init() {
 		log.Println(Red("Can not find logfile"))
 	}
 	go func() {
-		previousLine := ""
 		for data := range b.Input {
 
 			//log.Printf("Got to b.Input chan loop. data:%v\n", data)
@@ -160,9 +160,9 @@ func (b *Bufferflow3Devo) Init() {
 				// Check if incoming data contains corruption
 				splitLine := strings.Split(element, "\t")
 				// For now only check on data that starts with a digit
-				if match := logStartRegex.MatchString(element); match == true || len(splitLine) > 2 {
+				if initCompleted {
 					// Bruteforced regex to check if the line matches with our current (01-29-2019) log format
-					if match = validateLogRegex.MatchString(element); match == false {
+					if match := validateLogRegex.MatchString(element); match == false {
 						// If the line doesn't match swap it with the previous line and increment the time value
 						previousLineSplit := strings.Split(previousLine, "\t")
 						oldTime, _ := strconv.Atoi(previousLineSplit[0])
@@ -170,10 +170,12 @@ func (b *Bufferflow3Devo) Init() {
 						element = time + "\t" + strings.Join(previousLineSplit[1:], "\t")
 						log.Println(Red("Corrupt data found -> "), Blue(strings.Join(splitLine, "\t")))
 					}
+					previousLine = element
 				}
-				// TODO: Make this less hardcoded by improving the loggin system of the device in general
-				previousLine = element
-				m := DataPerLine{b.Port, previousLine + "\n"}
+				if !initCompleted && splitLine[0] == "Time" {
+					initCompleted = true
+				}
+				m := DataPerLine{b.Port, element + "\n"}
 
 				bm, err := json.Marshal(m)
 				if err == nil {
