@@ -118,8 +118,8 @@ var (
 	validate  = validator.New()
 	env       *utils.Env
 	ip        string
-	dataDir   = configdir.DataDir("3Devo", "FeConnector")     // Directory for user files like logs and notes
-	configDir = configdir.SettingsDir("3Devo", "FeConnector") // Directory for user configuration files
+	dataDir   = configdir.DataDir("3devo", "FM-Monitor")     // Directory for user files like logs and notes
+	configDir = configdir.SettingsDir("3devo", "FM-Monitor") // Directory for user configuration files
 )
 
 type NullWriter int
