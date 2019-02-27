@@ -54,8 +54,8 @@ func (b *Bufferflow3Devo) Init() {
 	b.BufferMax = 2
 
 	numberRegex := `-?[0-9]\d*(\.\d+)?` // Allows negative numbers as well https://stackoverflow.com/a/15814655
-	// The 3devo log format (01-29-2019) consists of 36 tab spaced items of which the 30th is a status text and the others are numbers
-	validateLogRegex := regexp.MustCompile(`(?:` + numberRegex + `?\t){29}(?:\w+\t)(?:` + numberRegex + `(?:\t|)){6}`)
+	// The 3devo log format (01-29-2019) consists of 36 or 44 tab spaced items of which the 30th is a status text and the others are numbers
+	validateLogRegex := regexp.MustCompile(`^(?:` + numberRegex + `?\t){29}(?:\w+\t)((?:` + numberRegex + `(?:\t|)){6}|(?:` + numberRegex + `(?:\t|)){14})$`)
 	initCompleted := false
 	previousLine := ""
 
@@ -89,6 +89,7 @@ func (b *Bufferflow3Devo) Init() {
 				b.inOutLock.Unlock()
 				continue
 			}
+			log.Printf("%x -> %v", arrLines[0][len(arrLines[0])-1:], len(strings.Split(arrLines[0], "\t")))
 
 			// log.Printf("Analyzing incoming data. Start.")
 
