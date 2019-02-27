@@ -99,61 +99,6 @@ func (b *Bufferflow3Devo) Init() {
 				//log.Printf("Working on element:%v, index:%v", element)
 				// log.Printf("\t\tData:%v", element)
 
-				// Peek to see if the message back matches the command we just sent in
-				lastCmd, _ := b.q.Peek()
-				lastCmd = regexp.MustCompile("\n").ReplaceAllString(lastCmd, "")
-
-				cmdProcessed := false
-				// log.Printf("\t\tSeeing if peek compare to lastCmd makes sense. lastCmd:\"%v\", element:\"%v\"", lastCmd, element)
-				if lastCmd == element {
-					// we just got back the last command so that is a good indicator we got processed
-					log.Printf("\t\tWe got back the same command that was just sent in. That is a sign we are processed.")
-					cmdProcessed = true
-				}
-
-				//check for >|stdin:|= response indicating a line has been processed
-				if cmdProcessed || b.reCmdDone.MatchString(element) {
-
-					// ok, a line has been processed, the if statement below better
-					// be guaranteed to be true, cuz if its not we did something wrong
-					if b.q.Len() > 0 {
-						//b.BufferSize -= b.BufferSizeArray[0]
-						doneCmd, id := b.q.Poll()
-
-						// Send cmd:"Complete" back
-						m := DataCmdComplete{"Complete", id, b.Port, b.q.Len(), doneCmd}
-						bm, err := json.Marshal(m)
-						if err == nil {
-
-							h.broadcastSys <- bm
-						}
-
-						log.Printf("\tBuffer decreased to b.q.Len:%v\n", b.q.Len())
-					} else {
-						log.Printf("\tWe should RARELY get here cuz we should have a command in the queue to dequeue when we get the >|stdin:|= response. If you see this debug stmt this is one of those few instances where NodeMCU sent us a >|stdin:|= not in response to a command we sent.")
-					}
-
-					if b.q.Len() < b.BufferMax {
-
-						// if we are paused, tell us to unpause cuz we have clean buffer room now
-						if b.GetPaused() {
-
-							// we are paused, but we can't just go unpause ourself, because we may
-							// be manually paused. this means we have to do a double-check here
-							if b.GetManualPaused() == false {
-
-								// we are not in a manual pause state, that means we can go ahead
-								// and unpause ourselves
-								b.SetPaused(false, 1) //set paused to false first, then release the hold on the buffer
-							} else {
-								log.Println("\tWe just got incoming >|stdin:|= so we could unpause, but since manual paused we will ignore until next time a >|stdin:|= comes in to unpause")
-							}
-						}
-
-					}
-
-				}
-
 				// handle communication back to client
 				// for base serial data (this is not the cmd:"Write" or cmd:"Complete")
 
@@ -167,8 +112,8 @@ func (b *Bufferflow3Devo) Init() {
 						previousLineSplit := strings.Split(previousLine, "\t")
 						oldTime, _ := strconv.Atoi(previousLineSplit[0])
 						time := strconv.Itoa(oldTime + 1)
+						log.Println(Red("Corrupt data found -> "), Blue(element))
 						element = time + "\t" + strings.Join(previousLineSplit[1:], "\t")
-						log.Println(Red("Corrupt data found -> "), Blue(strings.Join(splitLine, "\t")))
 					}
 					previousLine = element
 				}
