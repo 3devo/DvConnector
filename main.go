@@ -115,12 +115,13 @@ var (
 	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 
 	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
-	db        *storm.DB
-	validate  = validator.New()
-	env       *utils.Env
-	ip        string
-	dataDir   = configdir.DataDir("3devo", "FM-Monitor")     // Directory for user files like logs and notes
-	configDir = configdir.SettingsDir("3devo", "FM-Monitor") // Directory for user configuration files
+	db               *storm.DB
+	validate         = validator.New()
+	env              *utils.Env
+	ip               string
+	dataDir          = configdir.DataDir("3devo", "FM-Monitor")     // Directory for user files like logs and notes
+	configDir        = configdir.SettingsDir("3devo", "FM-Monitor") // Directory for user configuration files
+	appConfiguration *Configuration
 )
 
 type NullWriter int
@@ -148,8 +149,13 @@ func launchBrowserWithToken() {
 }
 
 func main() {
+	var err error
 	os.MkdirAll(dataDir, os.ModePerm)
 	os.MkdirAll(configDir, os.ModePerm)
+	appConfiguration, err = LoadConfiguration(filepath.Join(configDir, "config.yaml"))
+	if err != nil {
+		log.Println(err)
+	}
 	setupSysTray(onInit)
 }
 

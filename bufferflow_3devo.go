@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"log"
 	"regexp"
@@ -35,6 +36,31 @@ type Bufferflow3Devo struct {
 	BufferMax    int
 }
 
+// generateRegexFromHeaders takes the incoming headers and matches them up with the one found in the configuration struct
+// It then creates a regex based on the format of the headers using the validator value from the configuration
+// If a header is unknown to the configuration it will throw an error
+func generateRegexFromHeaders(headers []string, headerConfig *Configuration) (string, error) {
+	generatedRegex := "^"
+	headersConfigAsMap := map[string]string{}
+	for _, v := range headerConfig.Headers {
+		headersConfigAsMap[v.Name] = v.Validator
+	}
+
+	for index, headerName := range headers {
+		if _, key := headersConfigAsMap[headerName]; !key {
+			return "", errors.New("HEADER => " + headerName + " not found in the config.yaml can't create proper regex for these headers.\nPlease update your config.yaml file")
+		}
+		generatedRegex += headersConfigAsMap[headerName]
+		if index < len(headers)-1 {
+			generatedRegex += `\t`
+		} else {
+			generatedRegex += `$`
+
+		}
+	}
+	return generatedRegex, nil
+}
+
 func (b *Bufferflow3Devo) Init() {
 	log.Println("Initting timed buffer flow (output once every 16ms)")
 	b.bufferedOutput = ""
@@ -53,9 +79,7 @@ func (b *Bufferflow3Devo) Init() {
 	b.Input = make(chan string)
 	b.BufferMax = 2
 
-	numberRegex := `-?[0-9]\d*(\.\d+)?` // Allows negative numbers as well https://stackoverflow.com/a/15814655
-	// The 3devo log format (01-29-2019) consists of 36 or 44 tab spaced items of which the 30th is a status text and the others are numbers
-	validateLogRegex := regexp.MustCompile(`^(?:` + numberRegex + `?\t){29}(?:\w+\t)((?:` + numberRegex + `(?:\t|)){6}|(?:` + numberRegex + `(?:\t|)){14})$`)
+	var validateLogRegex *regexp.Regexp
 	initCompleted := false
 	previousLine := ""
 
@@ -89,9 +113,6 @@ func (b *Bufferflow3Devo) Init() {
 				b.inOutLock.Unlock()
 				continue
 			}
-			log.Printf("%x -> %v", arrLines[0][len(arrLines[0])-1:], len(strings.Split(arrLines[0], "\t")))
-
-			// log.Printf("Analyzing incoming data. Start.")
 
 			// if we made it here we have lines to analyze
 			// so analyze all of them except the last line
@@ -119,6 +140,14 @@ func (b *Bufferflow3Devo) Init() {
 					previousLine = element
 				}
 				if !initCompleted && splitLine[0] == "Time" {
+					generatedRegex, err := generateRegexFromHeaders(splitLine, appConfiguration)
+					if err != nil {
+						h.broadcastSys <- []byte("{\"Cmd\":\"Error\",\"Desc\":\"" + err.Error() + "\",\"Port\":\"" + b.Port + "\"}")
+						log.Println(Red(err.Error()))
+						spClose(b.Port)
+						break
+					}
+					validateLogRegex = regexp.MustCompile(generatedRegex)
 					initCompleted = true
 				}
 				m := DataPerLine{b.Port, element + "\n"}
