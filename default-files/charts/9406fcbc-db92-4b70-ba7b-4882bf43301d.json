@@ -10,7 +10,7 @@
         {
             "dataName": "SetRPM",
             "plotName": "Set RPM",
-            "color": "orange"
+            "color": "#FFA500"
         }
     ],
     "axes": [

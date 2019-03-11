@@ -5,7 +5,7 @@
         {
             "dataName": "SetT2",
             "plotName": "SetPoint",
-            "color": "orange"
+            "color": "#FFA500"
         },
         {
             "dataName": "Temp2",
@@ -15,7 +15,7 @@
         {
             "dataName": "dc2",
             "plotName": "Duty Cycle",
-            "color": "green",
+            "color": "#008000",
             "axis": "y2"
         }
     ],
