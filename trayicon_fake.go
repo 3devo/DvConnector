@@ -34,7 +34,7 @@ package main
 	No systray support for 386 and arm at the moment
 **/
 func setupSysTray(onInit func()) {
-
+	onInit()
 }
 func fillSysTray() {
 }
