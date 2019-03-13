@@ -81,12 +81,8 @@ var (
 	versionFloat = float32(0.1)
 	port         = flag.String("port", "8989", "Listening port.")
 	browserport  = flag.String("browserport", "", "Port to open in the browser. Defaults to the listening port, only needs to be changed during development.")
-	//	addr  = flag.String("addr", ":8980", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
-	saddr     = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
-	scert     = flag.String("scert", "cert.pem", "https certificate file")
-	skey      = flag.String("skey", "key.pem", "https key file")
-	hibernate = flag.Bool("hibernate", false, "start hibernated")
-	noBrowser = flag.Bool("b", false, "Don't open the webpage")
+	hibernate    = flag.Bool("hibernate", false, "start hibernated")
+	noBrowser    = flag.Bool("b", false, "Don't open the webpage")
 	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
 	//	verbose = flag.Bool("v", true, "show debug logging")
 	verbose = flag.Bool("v", false, "show debug logging")
@@ -384,30 +380,6 @@ func startHttp(ip string, config models.Config, h http.Handler) {
 	if err := http.ListenAndServe(serveInterfaces, h); err != nil {
 		fmt.Printf("Error trying to bind to http port: %v, so exiting...\n", err)
 		log.Fatal("Error ListenAndServe:", err)
-	}
-}
-
-func startHttps(ip string) {
-	// generate self-signed cert for testing or local trusted networks
-	// openssl req -x509 -nodes -newkey rsa:2048 -keyout key.pem -out cert.pem -days 365
-
-	f := flag.Lookup("saddr")
-	cert, certErr := os.Open(*scert)
-	key, keyErr := os.Open(*skey)
-
-	cert.Close()
-	key.Close()
-
-	if certErr != nil || keyErr != nil {
-		log.Println("Missing tls cert and/or key. Will not start HTTPS server.")
-		//fmt.Println("Missing tls cert and/or key. Will not start HTTPS server.")
-		return
-	}
-
-	log.Println("Starting https server and websocket on " + ip + "" + f.Value.String())
-	if err := http.ListenAndServeTLS(*saddr, *scert, *skey, nil); err != nil {
-		fmt.Printf("Error trying to bind to https port: %v, so exiting...\n", err)
-		log.Fatal("Error ListenAndServeTLS:", err)
 	}
 }
 
