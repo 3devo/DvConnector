@@ -115,7 +115,7 @@ func getAllPortsViaManufacturer() ([]OsSerialPort, os.SyscallError) {
 		i++
 	}
 	sort.Strings(mapfilekeys)
-	log.Printf("The list of directories with serial port device data:%v", mapfilekeys)
+	//log.Printf("The list of directories with serial port device data:%v", mapfilekeys)
 
 	//reRemoveManuf, _ := regexp.Compile("/manufacturer$")
 	reNewLine, _ := regexp.Compile("\n")
@@ -128,7 +128,7 @@ func getAllPortsViaManufacturer() ([]OsSerialPort, os.SyscallError) {
 		}
 
 		// search folder that had manufacturer file in it
-		log.Printf("\tDirectory searching: %v", directory)
+		//log.Printf("\tDirectory searching: %v", directory)
 
 		// for each manufacturer or product file, we need to read the val from the file
 		// but more importantly find the tty ports for this directory
@@ -156,7 +156,7 @@ func getAllPortsViaManufacturer() ([]OsSerialPort, os.SyscallError) {
 		deviceClass = reNewLine.ReplaceAllString(deviceClass, "")
 
 		if deviceClass == "09" || deviceClass == "9" || deviceClass == "09h" {
-			log.Printf("This is a hub, so skipping. %v", directory)
+			//log.Printf("This is a hub, so skipping. %v", directory)
 			continue
 		}
 
@@ -165,7 +165,7 @@ func getAllPortsViaManufacturer() ([]OsSerialPort, os.SyscallError) {
 		manuf := ""
 		if errRead != nil {
 			// the file could possibly just not exist, which is normal
-			log.Printf("Problem reading in manufacturer text file. It does not exist or Permissions maybe? err:%v", errRead)
+			//log.Printf("Problem reading in manufacturer text file. It does not exist or Permissions maybe? err:%v", errRead)
 			//return nil, err
 			//continue
 		}
@@ -204,7 +204,7 @@ func getAllPortsViaManufacturer() ([]OsSerialPort, os.SyscallError) {
 		idProduct := ""
 		idProduct = reNewLine.ReplaceAllString(string(idProductBytes), "")
 
-		log.Printf("%v : %v (%v) DevClass:%v", manuf, product, serialNum, deviceClass)
+		//log.Printf("%v : %v (%v) DevClass:%v", manuf, product, serialNum, deviceClass)
 
 		// -name tty[AU]* -print
 		filesTty := findDirs(directory, "^tty(A|U).*")
@@ -223,8 +223,8 @@ func getAllPortsViaManufacturer() ([]OsSerialPort, os.SyscallError) {
 			m[ttyPort]++
 			//ttyPorts = append(ttyPorts, ttyPort)
 		}
-		log.Printf("\tlist of ports on this. map:%v\n", m)
-		log.Printf("\t.")
+		//log.Printf("\tlist of ports on this. map:%v\n", m)
+		//log.Printf("\t.")
 		//sort.Strings(ttyPorts)
 
 		// create order array of ttyPorts so they're in order when
@@ -289,7 +289,7 @@ func findFiles(rootpath string, regexpstr string) []string {
 		}
 		return nil
 	})
-	log.Printf("Rootpath:%v, Numscanned:%v\nMatchedfiles:\n%v", rootpath, numScanned, strings.Join(matchedFiles, "\n"))
+	//log.Printf("Rootpath:%v, Numscanned:%v\nMatchedfiles:\n%v", rootpath, numScanned, strings.Join(matchedFiles, "\n"))
 	return matchedFiles
 }
 
@@ -306,7 +306,7 @@ func findDirs(rootpath string, regexpstr string) []string {
 		}
 		return nil
 	})
-	log.Printf("Rootpath:%v, Numscanned:%v\nMatcheddirs:\n%v", rootpath, numScanned, strings.Join(matchedFiles, "\n"))
+	//log.Printf("Rootpath:%v, Numscanned:%v\nMatcheddirs:\n%v", rootpath, numScanned, strings.Join(matchedFiles, "\n"))
 	return matchedFiles
 }
 
