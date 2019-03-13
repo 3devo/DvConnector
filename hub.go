@@ -186,10 +186,6 @@ func checkCmd(m []byte) {
 		getHostname()
 	} else if strings.HasPrefix(sl, "version") {
 		getVersion()
-	} else if strings.HasPrefix(sl, "execruntime") {
-		execRuntime()
-	} else if strings.HasPrefix(sl, "exec") {
-		go execRun(s)
 	} else {
 		go spErr("Could not understand command.")
 	}

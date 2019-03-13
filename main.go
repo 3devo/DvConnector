@@ -92,7 +92,6 @@ var (
 	verbose = flag.Bool("v", false, "show debug logging")
 	//homeTempl *template.Template
 	isLaunchSelf = flag.Bool("ls", false, "Launch self 5 seconds later. This flag is used when you ask for a restart from a websocket client.")
-	isAllowExec  = flag.Bool("allowexec", false, "Allow terminal commands to be executed (default false)")
 
 	// regular expression to sort the serial port list
 	// typically this wouldn't be provided, but if the user wants to clean
@@ -275,10 +274,6 @@ func onInit() {
 	} else {
 		log.Println("Garbage collection is off. Memory use will grow unbounded. You WILL RUN OUT OF RAM unless you send in the gc command to manually force garbage collection. Lower CPU, but progressive memory footprint.")
 		debug.SetGCPercent(-1)
-	}
-
-	if *isAllowExec {
-		log.Println("Enabling exec commands because you passed in -allowexec")
 	}
 
 	//homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
