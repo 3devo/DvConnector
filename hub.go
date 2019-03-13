@@ -168,8 +168,6 @@ func checkCmd(m []byte) {
 	} else if strings.HasPrefix(sl, "list") {
 		go spList()
 		//go getListViaWmiPnpEntity()
-	} else if strings.HasPrefix(sl, "broadcast") {
-		go broadcast(s)
 	} else if strings.HasPrefix(sl, "restart") {
 		restart()
 	} else if strings.HasPrefix(sl, "exit") {
@@ -299,31 +297,6 @@ func restart() {
 type CmdBroadcast struct {
 	Cmd string
 	Msg string
-}
-
-func broadcast(arg string) {
-	// we will get a string of broadcast asdf asdf asdf
-	log.Println("Inside broadcast arg: " + arg)
-	arg = strings.TrimPrefix(arg, " ")
-	//log.Println("arg after trim: " + arg)
-	args := strings.SplitN(arg, " ", 2)
-	if len(args) != 2 {
-		errstr := "Could not parse broadcast command: " + arg
-		log.Println(errstr)
-		spErr(errstr)
-		return
-	}
-	broadcastcmd := strings.Trim(args[1], " ")
-	log.Println("The broadcast cmd is:" + broadcastcmd + "---")
-
-	bcmd := CmdBroadcast{
-		Cmd: "Broadcast",
-		Msg: broadcastcmd,
-	}
-	json, _ := json.Marshal(bcmd)
-	log.Printf("bcmd:%v\n", string(json))
-	h.broadcastSys <- json
-
 }
 
 func (h *hub) sendErr(msg string) {
