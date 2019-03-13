@@ -742,13 +742,3 @@ func findPortByName(portname string) (*serport, bool) {
 	}
 	return nil, false
 }
-
-func spBaudRates() {
-	arr := []string{"2400", "4800", "9600", "19200", "38400", "57600", "115200", "230400"}
-	json := "{\"BaudRate\" : ["
-	for _, elem := range arr {
-		json += "" + elem + ", "
-	}
-	json = regexp.MustCompile(", $").ReplaceAllString(json, "]}")
-	h.broadcastSys <- []byte(json)
-}

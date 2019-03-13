@@ -168,8 +168,6 @@ func checkCmd(m []byte) {
 	} else if strings.HasPrefix(sl, "list") {
 		go spList()
 		//go getListViaWmiPnpEntity()
-	} else if strings.HasPrefix(sl, "baudrate") {
-		go spBaudRates()
 	} else if strings.HasPrefix(sl, "broadcast") {
 		go broadcast(s)
 	} else if strings.HasPrefix(sl, "restart") {
