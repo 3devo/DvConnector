@@ -160,7 +160,8 @@ func main() {
 func onInit() {
 	fillSysTray()
 	newDatabase := false
-	if _, err := os.Stat(filepath.Join(dataDir, "database", "feconnector.db")); os.IsNotExist(err) {
+	dbPath := filepath.Join(dataDir, "database", "feconnector.db")
+	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		newDatabase = true
 	}
 	webBox := packr.New("Frontend", "./frontend")
@@ -168,7 +169,7 @@ func onInit() {
 	os.MkdirAll(filepath.Join(dataDir, "notes"), os.ModePerm)
 	os.MkdirAll(filepath.Join(dataDir, "database"), os.ModePerm)
 
-	db, _ = storm.Open(filepath.Join(dataDir, "database", "feconnector.db"))
+	db, _ = storm.Open(dbPath)
 	db.Init(&models.User{})
 	db.Init(&models.BlackListedToken{})
 	db.Init(&models.Workspace{})
