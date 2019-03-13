@@ -445,10 +445,6 @@ func createCommands(wr writeRequest, id string) ([]string, []string, []string) {
 	return cmds, idArr, bufTypeArr
 }
 
-func writeToChannels(cmds []string, idArr []string, bufTypeArr []string) {
-
-}
-
 func spList() {
 
 	// call our os specific implementation of getting the serial list
