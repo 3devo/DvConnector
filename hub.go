@@ -190,8 +190,6 @@ func checkCmd(m []byte) {
 		execRuntime()
 	} else if strings.HasPrefix(sl, "exec") {
 		go execRun(s)
-	} else if strings.HasPrefix(sl, "usblist") {
-		SendUsbList()
 	} else {
 		go spErr("Could not understand command.")
 	}
