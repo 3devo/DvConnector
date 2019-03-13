@@ -53,7 +53,6 @@ func (h *hub) run() {
 			h.connections[c] = true
 			// send supported commands
 			c.send <- []byte("{\"Version\" : \"" + version + "\"} ")
-			c.send <- []byte("{\"Hostname\" : \"" + *hostname + "\"} ")
 		case c := <-h.unregister:
 			delete(h.connections, c)
 			// put close in func cuz it was creating panics and want
@@ -175,8 +174,6 @@ func checkCmd(m []byte) {
 		memoryStats()
 	} else if strings.HasPrefix(sl, "gc") {
 		garbageCollection()
-	} else if strings.HasPrefix(sl, "hostname") {
-		getHostname()
 	} else if strings.HasPrefix(sl, "version") {
 		getVersion()
 	} else {
@@ -192,10 +189,6 @@ func memoryStats() {
 	json, _ := json.Marshal(memStats)
 	log.Printf("memStats:%v\n", string(json))
 	h.broadcastSys <- json
-}
-
-func getHostname() {
-	h.broadcastSys <- []byte("{\"Hostname\" : \"" + *hostname + "\"}")
 }
 
 func getVersion() {

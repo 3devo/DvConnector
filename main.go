@@ -97,9 +97,6 @@ var (
 	//isGC = flag.Bool("gc", true, "Is garbage collection on? Off by default.")
 	gcType = flag.String("gc", "std", "Type of garbage collection. std = Normal garbage collection allowing system to decide (this has been known to cause a stop the world in the middle of a CNC job which can cause lost responses from the CNC controller and thus stalled jobs. use max instead to solve.), off = let memory grow unbounded (you have to send in the gc command manually to garbage collect or you will run out of RAM eventually), max = Force garbage collection on each recv or send on a serial port (this minimizes stop the world events and thus lost serial responses, but increases CPU usage)")
 
-	// hostname. allow user to override, otherwise we look it up
-	hostname = flag.String("hostname", "unknown-hostname", "Override the hostname we get from the OS")
-
 	db        *storm.DB
 	validate  = validator.New()
 	env       *utils.Env
@@ -236,13 +233,6 @@ func onInit() {
 
 	//getList()
 	log.Println("Version:" + version)
-
-	// hostname
-	hn, _ := os.Hostname()
-	if *hostname == "unknown-hostname" {
-		*hostname = hn
-	}
-	log.Println("Hostname:", *hostname)
 
 	// turn off garbage collection
 	// this is dangerous, as u could overflow memory
