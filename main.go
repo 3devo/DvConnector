@@ -169,7 +169,11 @@ func onInit() {
 	os.MkdirAll(filepath.Join(dataDir, "notes"), os.ModePerm)
 	os.MkdirAll(filepath.Join(dataDir, "database"), os.ModePerm)
 
-	db, _ = storm.Open(dbPath)
+	var err error
+	db, err = storm.Open(dbPath)
+	if err != nil {
+		log.Fatalf("Failed to open database %s: %s", dbPath, err)
+	}
 	db.Init(&models.User{})
 	db.Init(&models.BlackListedToken{})
 	db.Init(&models.Workspace{})
