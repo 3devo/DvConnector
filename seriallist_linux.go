@@ -281,10 +281,10 @@ func findFiles(rootpath string, regexpstr string) []string {
 	var matchedFiles []string
 	re := regexp.MustCompile(regexpstr)
 	numScanned := 0
-	filepath.Walk(rootpath, func(path string, fi os.FileInfo, _ error) error {
+	filepath.Walk(rootpath, func(path string, fi os.FileInfo, err error) error {
 		numScanned++
 
-		if fi.IsDir() == false && re.MatchString(fi.Name()) == true {
+		if err == nil && fi.IsDir() == false && re.MatchString(fi.Name()) == true {
 			matchedFiles = append(matchedFiles, path)
 		}
 		return nil
