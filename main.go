@@ -81,12 +81,8 @@ var (
 	versionFloat = float32(0.1)
 	port         = flag.String("port", "8989", "Listening port.")
 	browserport  = flag.String("browserport", "", "Port to open in the browser. Defaults to the listening port, only needs to be changed during development.")
-	hibernate    = flag.Bool("hibernate", false, "start hibernated")
 	noBrowser    = flag.Bool("b", false, "Don't open the webpage")
-	//assets       = flag.String("assets", defaultAssetPath(), "path to assets")
-	//	verbose = flag.Bool("v", true, "show debug logging")
-	verbose = flag.Bool("v", false, "show debug logging")
-	//homeTempl *template.Template
+	verbose      = flag.Bool("v", false, "show debug logging")
 	isLaunchSelf = flag.Bool("ls", false, "Launch self 5 seconds later. This flag is used when you ask for a restart from a websocket client.")
 
 	// regular expression to sort the serial port list
@@ -259,8 +255,6 @@ func onInit() {
 		log.Println("Garbage collection is off. Memory use will grow unbounded. You WILL RUN OUT OF RAM unless you send in the gc command to manually force garbage collection. Lower CPU, but progressive memory footprint.")
 		debug.SetGCPercent(-1)
 	}
-
-	//homeTempl = template.Must(template.ParseFiles(filepath.Join(*assets, "home.html")))
 
 	// see if they provided a regex filter
 	if len(*regExpFilter) > 0 {
