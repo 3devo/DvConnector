@@ -108,9 +108,6 @@ var (
 	// hostname. allow user to override, otherwise we look it up
 	hostname = flag.String("hostname", "unknown-hostname", "Override the hostname we get from the OS")
 
-	createScript = flag.Bool("createstartupscript", false, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
-
-	//	createScript = flag.Bool("createstartupscript", true, "Create an /etc/init.d/serial-port-json-server startup script. Available only on Linux.")
 	db        *storm.DB
 	validate  = validator.New()
 	env       *utils.Env
@@ -243,12 +240,6 @@ func onInit() {
 	}
 	if !*noBrowser {
 		launchBrowserWithToken()
-	}
-
-	// see if they want to just create startup script
-	if *createScript {
-		createStartupScript()
-		return
 	}
 
 	//getList()
