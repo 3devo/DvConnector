@@ -79,7 +79,8 @@ import (
 var (
 	version      = "0.1.0"
 	versionFloat = float32(0.1)
-	port         = flag.String("port", "8989", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
+	port         = flag.String("port", "8989", "Listening port.")
+	browserport  = flag.String("browserport", "", "Port to open in the browser. Defaults to the listening port, only needs to be changed during development.")
 	//	addr  = flag.String("addr", ":8980", "http service address. example :8800 to run on port 8800, example 10.0.0.2:9000 to run on specific IP address and port, example 10.0.0.2 to run on specific IP address")
 	saddr     = flag.String("saddr", ":8990", "https service address. example :8801 to run https on port 8801")
 	scert     = flag.String("scert", "cert.pem", "https certificate file")
@@ -142,8 +143,12 @@ func launchSelfLater() {
 }
 
 func launchBrowserWithToken() {
+	port_to_use := *port
+	if *browserport != "" {
+		port_to_use = *browserport
+	}
 	token, _ := utils.GenerateJWTToken("browser", time.Now().Add(time.Minute*time.Duration(utils.StandardTokenExpiration)).Unix())
-	open.Run("http://" + ip + ":" + *port + "/#/?token=" + token)
+	open.Run("http://" + string(ip) + ":" + port_to_use + "/#/?token=" + token)
 }
 
 func main() {
