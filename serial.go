@@ -542,7 +542,7 @@ func spList() {
 			newPort.FeedRateOverride = myport.feedRateOverride
 		}
 		//ls += "{ \"name\" : \"" + item.Name + "\", \"friendly\" : \"" + item.FriendlyName + "\" },\n"
-		if newPort.UsbPid == DevoUsbPID && newPort.UsbVid == DevoUsbVID {
+		if strings.EqualFold(newPort.UsbPid, DevoUsbPID) && strings.EqualFold(newPort.UsbVid, DevoUsbVID) {
 			spl.SerialPorts[ctr] = newPort
 			ctr++
 		}
