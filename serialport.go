@@ -284,46 +284,17 @@ func (p *serport) writerNoBuf() {
 			buf = "NoBuf"
 		}
 
-		// WARNING - Feedrate Override doesn't really belong in here because this is supposed
-		// to be a generic implementation of sending/receiving to serial ports
-		// However, there's not really a better place to put this because you need to know
-		// last minute what the feedrate override is and let the user adjust it at any time
-		// If you want a generic serial port implementation, remove this last minute call from this code
-
-		didWeOverride := false
-		newData := ""
-		if p.isFeedRateOverrideOn {
-			didWeOverride, newData = doFeedRateOverride(data.data, p.feedRateOverride)
+		// For reducing load on websocket, stop transmitting write data
+		qwr := qwReport{
+			Cmd:  "Write",
+			QCnt: p.itemsInBuffer,
+			Id:   string(data.id),
+			D:    string(data.data),
+			Buf:  buf,
+			P:    p.portConf.Name,
 		}
-
-		if didWeOverride {
-			// We need to reset the gcode and make the qwReport be what we want
-			// Since we changed the gcode, we need to report it back to the user
-			// For reducing load on websocket, stop transmitting write data
-			data.data = newData
-			qwr := qwReportWithData{
-				Cmd:  "Write",
-				QCnt: p.itemsInBuffer,
-				Id:   string(data.id),
-				D:    string(data.data),
-				Buf:  buf,
-				P:    p.portConf.Name,
-			}
-			qwrJson, _ := json.Marshal(qwr)
-			h.broadcastSys <- qwrJson
-		} else {
-			// For reducing load on websocket, stop transmitting write data
-			qwr := qwReport{
-				Cmd:  "Write",
-				QCnt: p.itemsInBuffer,
-				Id:   string(data.id),
-				D:    string(data.data),
-				Buf:  buf,
-				P:    p.portConf.Name,
-			}
-			qwrJson, _ := json.Marshal(qwr)
-			h.broadcastSys <- qwrJson
-		}
+		qwrJson, _ := json.Marshal(qwr)
+		h.broadcastSys <- qwrJson
 
 		// FINALLY, OF ALL THE CODE IN THIS PROJECT
 		// WE TRULY/FINALLY GET TO WRITE TO THE SERIAL PORT!
