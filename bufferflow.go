@@ -31,7 +31,6 @@ type Bufferflow interface {
 	SeeIfSpecificCommandsShouldWipeBuffer(cmd string) bool    // implement this method
 	SeeIfSpecificCommandsReturnNoResponse(cmd string) bool    // implement this method
 	ReleaseLock()                                             // implement this method
-	IsBufferGloballySendingBackIncomingData() bool            // implement this method
 	Close()                                                   // implement this method
 	RewriteSerialData(cmd string, id string) string           // implement this method
 }

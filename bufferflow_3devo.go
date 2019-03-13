@@ -328,10 +328,6 @@ func (b *Bufferflow3Devo) ReleaseLock() {
 	b.SetPaused(false, 2)
 }
 
-func (b *Bufferflow3Devo) IsBufferGloballySendingBackIncomingData() bool {
-	return true
-}
-
 func (b *Bufferflow3Devo) Close() {
 	if b.IsOpen == false {
 		// we are being asked a 2nd time to close when we already have
