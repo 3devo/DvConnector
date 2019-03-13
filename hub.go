@@ -176,8 +176,6 @@ func checkCmd(m []byte) {
 		memoryStats()
 	} else if strings.HasPrefix(sl, "gc") {
 		garbageCollection()
-	} else if strings.HasPrefix(sl, "bufflowdebug") {
-		bufflowdebug(sl)
 	} else if strings.HasPrefix(sl, "hostname") {
 		getHostname()
 	} else if strings.HasPrefix(sl, "version") {
@@ -187,17 +185,6 @@ func checkCmd(m []byte) {
 	}
 
 	//log.Print("Done with checkCmd")
-}
-
-func bufflowdebug(sl string) {
-	log.Println("bufflowdebug start")
-	if strings.HasPrefix(sl, "bufflowdebug on") {
-		*bufFlowDebugType = "on"
-	} else if strings.HasPrefix(sl, "bufflowdebug off") {
-		*bufFlowDebugType = "off"
-	}
-	h.broadcastSys <- []byte("{\"BufFlowDebug\" : \"" + *bufFlowDebugType + "\"}")
-	log.Println("bufflowdebug end")
 }
 
 func memoryStats() {
