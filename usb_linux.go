@@ -152,7 +152,7 @@ func getUsbList() []UsbItem {
 
 func execShellCmd(line string) (string, error) {
 	shell := os.Getenv("SHELL")
-	oscmd = exec.Command(shell, "-c", line)
+	oscmd := exec.Command(shell, "-c", line)
 	cmdOutput, err := oscmd.CombinedOutput()
 	if err != nil {
 		log.Println("err running shell cmd", err)
