@@ -231,9 +231,6 @@ func onInit() {
 	if *isLaunchSelf {
 		launchSelfLater()
 	}
-	if !*noBrowser {
-		launchBrowserWithToken()
-	}
 
 	//getList()
 	log.Println("Version:" + version)
@@ -359,6 +356,11 @@ func onInit() {
 	negroniMiddleware.UseHandler(router)
 
 	go startHttp(ip, config, negroniMiddleware)
+
+	// Launch browser after http server is started
+	if !*noBrowser {
+		launchBrowserWithToken()
+	}
 	ch := make(chan bool)
 	<-ch
 }
