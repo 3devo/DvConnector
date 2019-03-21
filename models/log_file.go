@@ -100,7 +100,7 @@ func (logFile *LogFile) DeleteLogFile(env *utils.Env) error {
 func (logFile *LogFile) GetFileName() string {
 	// Generate and store the filename on first use
 	if logFile.FileName == "" {
-		filename := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
+		filename := time.Unix(logFile.Timestamp, 0).Format("2006-01-02 15.04.05") + " " + logFile.Name + ".txt"
 		// Clean out characters that are invalid in Windows (which
 		// includes invalid characters on Linux and/or most
 		// filesystems).
