@@ -15,6 +15,7 @@ import (
 type LogFile struct {
 	UUID      string `storm:"id" json:"uuid"`
 	Name      string `json:"name"`
+	FileName  string `json:"filename"`
 	Timestamp int64  `json:"timestamp"`
 	HasNote   bool   `json:"hasNote"`
 }
@@ -94,6 +95,11 @@ func (logFile *LogFile) DeleteLogFile(env *utils.Env) error {
 	return nil
 }
 
+// GetFileName returns the filename to use
 func (logFile *LogFile) GetFileName() string {
-	return logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
+	// Generate and store the filename on first use
+	if logFile.FileName == "" {
+		logFile.FileName := logFile.Name + "-" + time.Unix(logFile.Timestamp, 0).Format("2006-01-02-15-04-05") + ".txt"
+	}
+	return logFile.FileName
 }
