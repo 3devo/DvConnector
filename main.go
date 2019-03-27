@@ -59,6 +59,7 @@ import (
 	//"net/http/pprof"
 	//"runtime"
 	"io"
+	"io/ioutil"
 	"runtime/debug"
 	"time"
 
@@ -267,6 +268,8 @@ func onInit() {
 		logrusLogger.SetOutput(mw)
 	}
 
+	setupJWTSecret()
+
 	// list serial ports
 	portList, _ := GetList()
 	metaports, _ := GetMetaList()
@@ -363,6 +366,37 @@ func onInit() {
 	}
 	ch := make(chan bool)
 	<-ch
+}
+
+func setupJWTSecret() {
+	secret_path := filepath.Join(env.DataDir, "jwt_secret")
+	secret, err := ioutil.ReadFile(secret_path)
+	if err == nil {
+		log.Println("Key", secret)
+		utils.LoadJWTSecret(secret)
+		// ReadFile does not document the errors it returns, but this
+		// seems to work...
+	} else if os.IsNotExist(err) {
+		secret, err = utils.GenerateJWTSecret()
+		if err != nil {
+			log.Fatal("Failed to generate JWT secret:", err)
+		}
+		log.Println("Generated JWT secret")
+		err = ioutil.WriteFile(secret_path, secret, 0600)
+		if err != nil {
+			log.Println("Failed to write JWT secret:", err)
+			log.Println("Authentication tokens will only be valid in this session")
+		}
+	} else {
+		log.Println("Failed to read JWT secret:", err)
+		log.Println("Authentication tokens will only be valid in this session")
+		log.Println("Generating JWT secret")
+		secret, err = utils.GenerateJWTSecret()
+		if err != nil {
+			log.Fatal("Failed to generate JWT secret:", err)
+		}
+		log.Println("Generated JWT secret")
+	}
 }
 
 func startHttp(ip string, config models.Config, h http.Handler) {
