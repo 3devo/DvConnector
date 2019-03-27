@@ -151,7 +151,7 @@ func (b *Bufferflow3Devo) Init() {
 					if err != nil {
 						log.Println(Red(fmt.Sprintf("Can't write to log file -> %v", logFile.GetFileName())))
 					}
-					log.Println(Green("Sending data -> "), m.D)
+					//log.Println(Green("Sending data -> "), m.D)
 					h.broadcastSys <- bm
 				}
 
