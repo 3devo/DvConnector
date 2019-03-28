@@ -20,7 +20,7 @@ func fillSysTray() {
 	systray.SetIcon(icon.Data)
 	systray.SetTitle("3devo serial monitor")
 	mOpen := systray.AddMenuItem("Open Monitor", "Opens the serial monitor")
-	mAbout := systray.AddMenuItem("About", "About this application")
+	mHelp := systray.AddMenuItem("Help", "Get help using this application")
 	mReset := systray.AddMenuItem("Reset user (Requires restart)", "Resets the user accounts (Requires restart)")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")
 	go func() {
@@ -28,8 +28,8 @@ func fillSysTray() {
 			select {
 			case <-mOpen.ClickedCh:
 				launchBrowserWithToken()
-			case <-mAbout.ClickedCh:
-				open.Run("https://3devo.com/support/")
+			case <-mHelp.ClickedCh:
+				open.Run("https://3devo.com/devovision-help")
 			case <-mReset.ClickedCh:
 				var users []models.User
 				env.Db.All(&users)
