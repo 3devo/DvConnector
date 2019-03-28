@@ -1,8 +1,9 @@
 {
     "uuid": "0f568de3-f36c-452d-b716-90b9f16521f1",
-    "title": "Filament thickness and Extruder RPM",
+    "title": "Filament thickness and Extruder RPM & Current",
     "charts": [
         "e448074d-f045-4e86-9db4-17bc83c5df89",
-        "9406fcbc-db92-4b70-ba7b-4882bf43301d"
+        "9406fcbc-db92-4b70-ba7b-4882bf43301d",
+        "31ce1b73-252b-4d3a-8718-540f8ee33fc4"
     ]
 }
