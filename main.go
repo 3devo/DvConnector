@@ -372,7 +372,6 @@ func setupJWTSecret() {
 	secret_path := filepath.Join(env.DataDir, "jwt_secret")
 	secret, err := ioutil.ReadFile(secret_path)
 	if err == nil {
-		log.Println("Key", secret)
 		utils.LoadJWTSecret(secret)
 		// ReadFile does not document the errors it returns, but this
 		// seems to work...

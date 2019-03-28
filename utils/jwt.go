@@ -3,7 +3,6 @@ package utils
 import (
 	"crypto/rand"
 	"errors"
-	"log"
 
 	jwt "github.com/dgrijalva/jwt-go"
 )
@@ -55,7 +54,6 @@ func ValidateJWTToken(tokenString string) (*jwt.StandardClaims, error) {
 	if jwtSecret == nil || len(jwtSecret) != SecretLength {
 		return nil, errors.New("No JWT secret set")
 	}
-	log.Println("using secret", jwtSecret)
 
 	token, err := jwt.ParseWithClaims(tokenString, &jwt.StandardClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if jwtSecret == nil || len(jwtSecret) == 0 {
