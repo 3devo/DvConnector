@@ -18,8 +18,8 @@ func setupSysTray(onInit func()) {
 
 func fillSysTray() {
 	systray.SetIcon(icon.Data)
-	systray.SetTitle("3devo serial monitor")
-	mOpen := systray.AddMenuItem("Open Monitor", "Opens the serial monitor")
+	systray.SetTitle("DevoVision")
+	mOpen := systray.AddMenuItem("Open DevoVision", "Opens the DevoVision browser interface")
 	mHelp := systray.AddMenuItem("Help", "Get help using this application")
 	mReset := systray.AddMenuItem("Reset user (Requires restart)", "Resets the user accounts (Requires restart)")
 	mQuit := systray.AddMenuItem("Quit", "Quit the whole app")

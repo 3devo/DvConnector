@@ -103,8 +103,8 @@ var (
 	validate  = validator.New()
 	env       *utils.Env
 	ip        string
-	dataDir   = configdir.DataDir("3devo", "FM-Monitor")     // Directory for user files like logs and notes
-	configDir = configdir.SettingsDir("3devo", "FM-Monitor") // Directory for user configuration files
+	dataDir   = configdir.DataDir("3devo", "DevoVision")     // Directory for user files like logs and notes
+	configDir = configdir.SettingsDir("3devo", "DevoVision") // Directory for user configuration files
 )
 
 type NullWriter int
@@ -144,7 +144,7 @@ func main() {
 func onInit() {
 	fillSysTray()
 	newDatabase := false
-	dbPath := filepath.Join(dataDir, "database", "feconnector.db")
+	dbPath := filepath.Join(dataDir, "database", "devovision.db")
 	if _, err := os.Stat(dbPath); os.IsNotExist(err) {
 		newDatabase = true
 	}
