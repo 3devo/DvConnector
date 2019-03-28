@@ -2,13 +2,13 @@
     "FixedFileInfo": {
         "FileVersion": {
             "Major": 0,
-            "Minor": 0,
+            "Minor": 2,
             "Patch": 0,
             "Build": 0
         },
         "ProductVersion": {
             "Major": 0,
-            "Minor": 0,
+            "Minor": 2,
             "Patch": 0,
             "Build": 0
         },
@@ -29,8 +29,7 @@
         "OriginalFilename": "",
         "PrivateBuild": "",
         "ProductName": "DevoVision",
-        "ProductVersion": "v1.0.0.0",
-        "SpecialBuild": "Alpha"
+        "ProductVersion": "v0.2.0-rc1"
     },
     "VarFileInfo": {
         "Translation": {
