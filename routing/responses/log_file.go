@@ -4,8 +4,8 @@ import (
 	"io/ioutil"
 	"path/filepath"
 
-	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/models"
+	"github.com/3devo/dvconnector/utils"
 )
 
 // LogFileResponse is a single logFile response model

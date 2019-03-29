@@ -7,8 +7,8 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 
-	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/models"
+	"github.com/3devo/dvconnector/utils"
 )
 
 // AuthRequired is a middleware handler that makes sure the request

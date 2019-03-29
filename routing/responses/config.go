@@ -1,7 +1,7 @@
 package responses
 
 import (
-	"github.com/3devo/feconnector/models"
+	"github.com/3devo/dvconnector/models"
 )
 
 // ConfigCreationBody is the body that is needed to create a new Config through rest

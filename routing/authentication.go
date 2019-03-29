@@ -10,9 +10,9 @@ import (
 
 	"github.com/tidwall/gjson"
 
-	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/routing/responses"
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/models"
+	"github.com/3devo/dvconnector/routing/responses"
+	"github.com/3devo/dvconnector/utils"
 	"github.com/julienschmidt/httprouter"
 )
 

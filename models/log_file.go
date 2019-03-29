@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"time"
 
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/utils"
 )
 
 // A logFile database model

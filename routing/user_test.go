@@ -10,12 +10,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/routing"
-	"github.com/3devo/feconnector/routing/responses"
+	"github.com/3devo/dvconnector/models"
+	"github.com/3devo/dvconnector/routing"
+	"github.com/3devo/dvconnector/routing/responses"
 	"github.com/google/uuid"
 
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/utils"
 	"github.com/julienschmidt/httprouter"
 	. "github.com/smartystreets/goconvey/convey"
 	validator "gopkg.in/go-playground/validator.v9"

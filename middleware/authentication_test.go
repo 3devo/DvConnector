@@ -13,9 +13,9 @@ import (
 	"github.com/asdine/storm"
 	validator "gopkg.in/go-playground/validator.v9"
 
-	"github.com/3devo/feconnector/middleware"
-	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/middleware"
+	"github.com/3devo/dvconnector/models"
+	"github.com/3devo/dvconnector/utils"
 	"github.com/julienschmidt/httprouter"
 
 	. "github.com/smartystreets/goconvey/convey"
@@ -29,7 +29,7 @@ func routeHandler() httprouter.Handle {
 }
 
 func PrepareDb() (string, *storm.DB) {
-	dir := filepath.Join(os.TempDir(), "feconnector-test")
+	dir := filepath.Join(os.TempDir(), "dvconnector-test")
 	os.MkdirAll(dir, os.ModePerm)
 	db, _ := storm.Open(filepath.Join(dir, "storm.db"))
 	return dir, db

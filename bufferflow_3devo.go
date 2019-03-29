@@ -9,7 +9,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/3devo/feconnector/models"
+	"github.com/3devo/dvconnector/models"
 	. "github.com/logrusorgru/aurora"
 )
 

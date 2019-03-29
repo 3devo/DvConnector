@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/3devo/feconnector/icon"
-	"github.com/3devo/feconnector/models"
+	"github.com/3devo/dvconnector/icon"
+	"github.com/3devo/dvconnector/models"
 	"github.com/getlantern/systray"
 	"github.com/skratchdot/open-golang/open"
 )

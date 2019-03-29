@@ -1,6 +1,6 @@
 package responses
 
-import "github.com/3devo/feconnector/models"
+import "github.com/3devo/dvconnector/models"
 
 // UserCreationBody is the body needed to create a user through rest
 // swagger:parameters CreateUser UpdateUser

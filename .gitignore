@@ -14,5 +14,5 @@ release/*
 files
 vendor
 swagger.json
-feconnector.db*
+dvconnector.db*
 frontend/

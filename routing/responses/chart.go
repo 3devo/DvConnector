@@ -1,6 +1,6 @@
 package responses
 
-import "github.com/3devo/feconnector/models"
+import "github.com/3devo/dvconnector/models"
 
 // ChartCreationBody is the body needed to create a chart through rest
 // swagger:parameters CreateChart UpdateChart

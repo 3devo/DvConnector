@@ -9,8 +9,8 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/models"
+	"github.com/3devo/dvconnector/utils"
 	"github.com/gorilla/websocket"
 	"github.com/julienschmidt/httprouter"
 )

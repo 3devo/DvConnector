@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/3devo/feconnector/models"
+	"github.com/3devo/dvconnector/models"
 	"github.com/asdine/storm"
 )
 
@@ -61,7 +61,7 @@ var workspaces = []models.Workspace{
 		Title: "workspace2"}}
 
 func PrepareDb() (string, *storm.DB) {
-	dir := filepath.Join(os.TempDir(), "feconnector-test")
+	dir := filepath.Join(os.TempDir(), "dvconnector-test")
 	os.MkdirAll(dir, os.ModePerm)
 	db, _ := storm.Open(filepath.Join(dir, "storm.db"))
 	os.Mkdir(filepath.Join(dir, "logs"), os.ModePerm)

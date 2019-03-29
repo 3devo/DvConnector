@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"strings"
 
-	"github.com/3devo/feconnector/models"
+	"github.com/3devo/dvconnector/models"
 	"github.com/asdine/storm"
 	packr "github.com/gobuffalo/packr/v2"
 )

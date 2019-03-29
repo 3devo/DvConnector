@@ -1,8 +1,8 @@
 package responses
 
 import (
-	"github.com/3devo/feconnector/models"
-	"github.com/3devo/feconnector/utils"
+	"github.com/3devo/dvconnector/models"
+	"github.com/3devo/dvconnector/utils"
 	"github.com/asdine/storm/q"
 )
 

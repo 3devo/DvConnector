@@ -1,4 +1,4 @@
-module github.com/3devo/feconnector
+module github.com/3devo/dvconnector
 
 require (
 	github.com/BurntSushi/toml v0.3.1
