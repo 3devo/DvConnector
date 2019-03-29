@@ -1,42 +1,38 @@
-FeConnector - Backend for the Next 1.0 logging application
-======================
- > Version: Proof of concept
+DvConnector
+===========
+DvConnector is part of the [DevoVision](https://3devo.com/devovision/)
+software used to monitor the Filament Makers built by 3devo. DevoVision
+consists of two parts:
+ - DvConnector, which runs on a computer, can connect to the Filament
+   Maker serial port and has a small webserver to server the DvFrontend
+   code.
+ - DvFrontend, which is a javascript-based in-browser application that
+   can talk to DvConnector to get info from the machine and show that
+   info graphically.
 
-## Introduction
+This repository contains the golang-based DvConnector code. The
+DvFrontend files (or any other frontend to be served by DvConnector)
+should be put into the `frontend` directory.
 
-This application is written in golang and based on the [serial-json-server](https://github.com/chilipeppr/serial-port-json-server) implementation. Most of it has been stripped away but the core connection mechanics remained mostly the same.
-
-This application when started starts a webserver that's listening on a random open port unless specified differently. It tries to serve the html files from the public folder unless specified differently.
-The main purpose of the application is connecting to the connected Next 1.0 device and reading the incoming serial data from it parsing that and sending it to the connected websocket connections.
-
-To use it as a fully fledged application you need to download a release from the [Fefrontend repository](https://github.com/3devo/fefrontend). And place the extracted content into the public folder.
+This application is written in golang and based on the
+[serial-json-server](https://github.com/chilipeppr/serial-port-json-server)
+implementation. Most of it has been stripped away but the core
+connection mechanics remained mostly the same.
 
 ## Usage
 
-To use the feconnector executable there are is the standard way of just executing it but if you want more fine grain control of the port or folder it selects you can use flags to define those variables.
+Usually, you can just start dvconnector. It will run a webserver on port
+8989 and open up browser window to show the frontend (passing a
+token to authenticate the connection). Additionally, it creates a system
+tray icon, which can be used to control the application and open
+additional browser windows if needed.
+
+dvconnector accepts various commandline options:
 
 ```
   -port string
-        http service address. example 8800 to run on port 8800
-        address (default ":8989")
-
-  -allowexec
-        Allow terminal commands to be executed (default false)
-
-  -bufflowdebug string
-        off = (default) We do not send back any debug JSON, on = We will send back a
-        JSON response with debug info based on the configuration of the buffer flow
-        that the user picked (default "off")
-
-  -createstartupscript
-        Create an /etc/init.d/serial-port-json-server startup script. Available only
-        on Linux.
-
-  -d string
-        the directory of static file to host (default "./public")
-
-  -disablecayenn
-        Disable loading of Cayenn TCP/UDP server on port 8988
+        port to start webserver on. example 8800 to run on port 8800
+        address (default "8989")
 
   -gc string
         Type of garbage collection. std = Normal garbage collection allowing system to
@@ -48,66 +44,71 @@ To use the feconnector executable there are is the standard way of just executin
         port (this minimizes stop the world events and thus lost serial responses, but
         increases CPU usage) (default "std")
 
-  -hibernate
-        start hibernated
-
-  -hostname string
-        Override the hostname we get from the OS (default "unknown-hostname")
-
   -ls
         Launch self 5 seconds later. This flag is used when you ask for a restart from
         a websocket client.
 
   -regex string
         Regular expression to filter serial port list, i.e. -regex usb|acm
-
-  -saddr string
-        https service address. example :8801 to run https on port 8801 (default ":8990")
-
-  -scert string
-        https certificate file (default "cert.pem")
-
-  -skey string
-        https key file (default "key.pem")
+        (note that there is also hardcoded filtering on usb vidpid)
 
   -v    show debug logging
 
+  -b    Do not open a browser at startup
+
+  -browserport port
+        When opening the browser, use this this part rather than the
+        port that the webserver listens on. This can be useful during
+        debugging, e.g. when running a yarn dev server on a different
+        port (proxying to the webserver port for DvConnector API
+        requests).
 ```
 
-## Requirements
+## Building
 
-* GO v10.0
-* go dep
-* Go path configured
+Requirements:
+ - Go 1.11 for the `go.mod` file to be understood properly.
+ - The `goversioninfo` go package, for Windows builds with version info and an icon.
+ - libgtk-3 and libappindicator3, for Linux builds with systray support.
 
-## Build Setup
+To build the golang application you can run `go build`.
 
-External dependencies
+To build without systray support, add `-tags cli`.
 
-* github.com/3devo/feconnector/icon
-* github.com/bob-thomas/go-serial
-* github.com/facchinm/go-serial
-* github.com/getlantern/systray
-* github.com/go-ole/go-ole
-* github.com/go-ole/go-ole/oleutil
-* github.com/gorilla/websocket
-* github.com/julienschmidt/httprouter
-* github.com/kardianos/osext
-* github.com/rs/cors
-* github.com/skratchdot/open-golang/open
-* github.com/tidwall/gjson
-* github.com/gobuffalo/packr2/v2
-* github.com/bob-thomas/configdir
+If you want to build and deploy you will need to use and install
+[packr2](https://github.com/gobuffalo/packr/tree/master/v2) and build
+with `packr2 build` this will package all the assets into the
+executable.
 
-To build the golang application you can run `go build` or use the build.sh utility.
+## License
+DvConnector is based on the [Chilipeppr serial-port-json-server][spjs] project,
+which is licensed under the GPL license. Hence the connector binary as
+well as the sources, are licensed under the GPL as well. Note that
+the original project does not clearly specify the GPL versions that can
+be used, but it includes version 2 of the GPL, so DvConnector is
+licensed under GPL v2-only to be sure.
 
-If you want to build and deploy you will need to use and install [packr2](https://github.com/gobuffalo/packr/tree/master/v2) and build with `packr2 build` this will package the assets into executable.
+[spjs]: https://github.com/chilipeppr/serial-port-json-server
 
-The build utility can build the application and also generate + upload releases
+In particular, the following terms apply to the DvConnector sources:
 
-```
-    usage: ./build.sh [-c || -f || -r 0.1 \"cool release\" ||  -h
-      -c             | --connector           : Build connector
-      -r tag message | --release tag message : Build and upload release with tag and message
-      -h             | --help                : This help message
-```
+> Copyright (C) John Lauer and various contributors
+> Copyright (C) 2018-2019 3devo B.V. (https://www.3devo.com)
+>
+> This program is free software; you can redistribute it and/or modify
+> it under the terms of the GNU General Public License as published by
+> the Free Software Foundation; version 2
+>
+> This program is distributed in the hope that it will be useful,
+> but WITHOUT ANY WARRANTY; without even the implied warranty of
+> MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> GNU General Public License for more details.
+>
+> You should have received a copy of the GNU General Public License along
+> with this program; if not, write to the Free Software Foundation, Inc.,
+> 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+The full license text can be found in the LICENSE.md file.
+
+Note that the DvFrontend source code is not currently available under an open
+license.
