@@ -515,7 +515,6 @@ func spList() {
 			Baud:                      0,
 			BufferAlgorithm:           "",
 			AvailableBufferAlgorithms: availableBufferAlgorithms,
-			Ver:                       versionFloat,
 			UsbPid:                    item.IdProduct,
 			UsbVid:                    item.IdVendor,
 		}

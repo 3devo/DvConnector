@@ -80,7 +80,6 @@ import (
 
 var (
 	version      = "0.2.0"
-	versionFloat = float32(0.1)
 	port         = flag.String("port", "8989", "Listening port.")
 	browserport  = flag.String("browserport", "", "Port to open in the browser. Defaults to the listening port, only needs to be changed during development.")
 	noBrowser    = flag.Bool("b", false, "Don't open the webpage")
