@@ -71,9 +71,29 @@ Requirements:
  - The `goversioninfo` go package, for Windows builds with version info and an icon.
  - libgtk-3 and libappindicator3, for Linux builds with systray support.
 
-To build the golang application you can run `go build`.
+To build the golang application you can run `go build`. This will
+download dependencies automaticaly using the version specified in our
+go.mod file or that of our (indirect) dependencies.
+
+Alternatively, you can run `go build -mod=vendor`, which will use
+dependencies from the `vendor` subdirectory (which contains full copies
+of all dependencies and *should* always match the versions in go.mod).
+This should be used for all release builds, so the exact code used to
+build each release can be found in this repository.
 
 To build without systray support, add `-tags cli`.
+
+To update dependencies, run `get -u -m` (specify a module name to update
+that module, or leave it out to update all of them). Then run `go mod
+tidy` to prune unneeded dependencies, as well as include everything in
+go.mod to build and run all testsuites on all platforms.
+
+Whenever you update `go.mod`, also make sure to update the vendor
+directory to match with `go mod vendor`. This will put all dependencies
+used to build or run our own testcases in the vendor directory,
+excluding modules that are only needed to run the testsuit of our
+dependencies. It will also remove any modules that are no longer needed
+from the vendor directory.
 
 If you want to build and deploy you will need to use and install
 [packr2](https://github.com/gobuffalo/packr/tree/master/v2) and build
@@ -112,3 +132,8 @@ The full license text can be found in the LICENSE.md file.
 
 Note that the DvFrontend source code is not currently available under an open
 license.
+
+Binary versions of DvConnector use a number of third-party libraries
+with various licenses. The exact sources, including their license
+conditions and notices, that were used for a given binary release can be
+found in this repository in the `vendor` directory.
